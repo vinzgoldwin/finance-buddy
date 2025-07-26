@@ -32,8 +32,8 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        <link rel="icon" type="image/svg+xml" href="{{ Vite::asset('resources/assets/images/finance_buddy_dark.svg') }}">
+        <link rel="icon" href="/favicon.png" type="image/png">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         <link rel="preconnect" href="https://fonts.bunny.net">

@@ -29,8 +29,11 @@ class StatementController extends Controller
 
         $file = $validated['statement'];
 
-        // Extract text from the PDF. Additional parsing logic can be placed here.
         $text = Pdf::getText($file->getPathname());
+
+
+//        $text = Pdf::ge($file->getPathname());
+        dd($text);
 
         // TODO: Process \$text to create transactions or other records.
 

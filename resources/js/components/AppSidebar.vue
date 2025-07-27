@@ -20,8 +20,8 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
     },
     {
-        title: 'Upload Statement',
-        href: '/statements/upload',
+        title: 'Upload Finance Files',
+        href: '/files/upload',
         icon: UploadCloud,
     },
     {

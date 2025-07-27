@@ -36,22 +36,13 @@ class OpenAiTransactionParserService
                - The amount is typically the total amount due or paid.
 
             5. When determining the category, use the following guidelines:
-               - Food & Dining: Restaurants, groceries, food delivery
-               - Shopping: Retail purchases, online shopping
-               - Transportation: Gas, public transit, ride-sharing
-               - Bills & Utilities: Phone, internet, electricity
-               - Entertainment: Movies, concerts, streaming services
-               - Travel: Hotels, flights, car rentals
-               - Health & Fitness: Medical expenses, gym memberships
-               - Housing: Rent, mortgage, property taxes
-               - Insurance: Health, auto, life insurance premiums
-               - Education: Tuition, school fees, educational materials
-               - Savings & Investments: Stock purchases, mutual funds, transfers to savings
                - Income: Salary payments, refunds, reimbursements
-               - Fees & Charges: Bank fees, late fees, interest charges
-               - Gifts & Donations: Charitable donations, personal gifts
-               - Subscriptions: Recurring digital or physical services (e.g., SaaS, streaming)
-               - Transfers: Bank transfers, peer-to-peer payments, internal account moves
+               - Housing & Utilities: Rent, mortgage, property taxes, phone, internet, electricity
+               - Food & Groceries: Restaurants, groceries, food delivery
+               - Transport & Travel: Gas, public transit, ride‑sharing, flights, hotels, car rentals
+               - Health & Insurance: Medical expenses, gym memberships, all insurance premiums
+               - Shopping & Lifestyle: Retail purchases, online shopping, entertainment, subscriptions, gifts & donations
+               - Savings & Investing: Transfers to savings, stock purchases, mutual funds, retirement contributions
                - Other: Any transactions that don't fit the above categories
 
             6. If you encounter any ambiguous or missing information:
@@ -71,14 +62,14 @@ class OpenAiTransactionParserService
                 "description": "Grocery Store Purchase",
                 "amount": 56.78,
                 "currency": "USD",
-                "category": "Food & Dining"
+                "category": "Food & Groceries"
               },
               {
                 "date": "2023-05-16",
                 "description": "Gas Station",
                 "amount": 45.00,
                 "currency": "USD",
-                "category": "Transportation"
+                "category": "Transport & Travel"
               }
             ]
             </transactions>

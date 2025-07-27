@@ -3,6 +3,7 @@
 namespace App\Actions\FinancialDocument;
 
 use App\Models\Transaction;
+use App\Models\Category;
 use App\Services\OpenAiTransactionParserService;
 use App\Services\PdfToTextService;
 use Illuminate\Http\UploadedFile;
@@ -26,13 +27,17 @@ class ParseFinancialDocumentAction
 
         $rows = $this->ai->parse($rawText);
 
-        return collect($rows)->map(fn (array $row) => Transaction::create([
-            'occurred_at'  => $row['date']        ?? null,
-            'description' => $row['description'] ?? 'Unknown',
-            'amount'      => $row['amount']      ?? 0,
-            'currency'    => $row['currency']    ?? 'Unknown',
-            'category'    => $row['category']    ?? 'Other',
-            'user_id'     => auth()->id(),
-        ]));
+        return collect($rows)->map(function (array $row) {
+            $categoryId = Category::where('name', $row['category'] ?? 'Other')->value('id');
+
+            return Transaction::create([
+                'occurred_at'  => $row['date']        ?? null,
+                'description' => $row['description'] ?? 'Unknown',
+                'amount'      => $row['amount']      ?? 0,
+                'currency'    => $row['currency']    ?? 'Unknown',
+                'category_id' => $categoryId,
+                'user_id'     => auth()->id(),
+            ]);
+        });
     }
 }

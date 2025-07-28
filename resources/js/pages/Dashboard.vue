@@ -1,65 +1,138 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
-import { computed } from 'vue'
+/* ───────────── imports ───────────── */
+import { Head, router } from '@inertiajs/vue3'
+import { ref, watch, computed } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, } from '@/components/ui/card'
+import {
+    Card, CardHeader, CardTitle, CardDescription, CardContent,
+} from '@/components/ui/card'
 import { Line, Doughnut } from 'vue-chartjs'
-import { CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, ArcElement, Legend, Chart as ChartJS } from 'chart.js'
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend)
+import {
+    CategoryScale, LinearScale, PointElement, LineElement,
+    Title, ArcElement, Legend, Chart as ChartJS,
+} from 'chart.js'
 
-// 👇 Inertia props ----------------------------------------------------------
-interface Metrics { income: number; expenses: number; netPct: number }
+/*  shadcn-vue controls  */
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { CalendarIcon } from 'lucide-vue-next'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+
+/*  Date helpers for Reka UI  */
+import { CalendarDate } from '@internationalized/date'
+
+ChartJS.register(
+    CategoryScale, LinearScale, PointElement,
+    LineElement, ArcElement, Title, Legend,
+)
+
+/* ───────────── Inertia props ───────────── */
+interface Metrics { income:number; expenses:number; netPct:number }
 const props = defineProps<{
     metrics: Metrics
-    monthly: Array<{ month: string; income: number; expenses: number }>
-    categories: Array<{ label: string; value: number }>
-    recent: Array<{ id: number; date: string; description: string; category: string; amount: number; currency: string }>
+    monthly: Array<{ month:string; income:number; expenses:number }>
+    categories: Array<{ label:string; value:number }>
+    recent: Array<{
+        id:number; date:string; description:string;
+        category:string; amount:number; currency:string
+    }>
     currency: 'USD' | 'IDR'
+    date?: string   // “YYYY-MM” from the controller
 }>()
 
-const money = (v: number, curr: string = props.currency) => new Intl.NumberFormat(curr === 'IDR' ? 'id-ID' : 'en-US', { style: 'currency', currency: curr }).format(v)
+/* ───────────── helpers ───────────── */
+const money = (v:number, curr = props.currency) =>
+    new Intl.NumberFormat(curr === 'IDR' ? 'id-ID' : 'en-US',
+        { style:'currency', currency:curr }).format(v)
 
-const lineData = computed(() => {
-    return {
-        labels: props.monthly.map(m => m.month),
-        datasets: [
-            {
-                label: 'Income',
-                data : props.monthly.map(m => m.income),
-                tension: 0.4,
-            },
-            {
-                label: 'Expenses',
-                data : props.monthly.map(m => m.expenses),
-                tension: 0.4,
-            },
-        ],
-    }
+/* ───────────── charts ───────────── */
+const lineData = computed(() => ({
+    labels: props.monthly.map(m => m.month),
+    datasets: [
+        { label:'Income',   data:props.monthly.map(m => m.income),   tension:0.4 },
+        { label:'Expenses', data:props.monthly.map(m => m.expenses), tension:0.4 },
+    ],
+}))
+
+const COLOR_BY_CATEGORY:Record<string,string> = {
+    'Housing & Utilities':'#3b82f6','Food & Groceries':'#f97316',
+    'Transport & Travel':'#0ea5e9','Health & Insurance':'#ef4444',
+    'Shopping & Lifestyle':'#a855f7','Savings & Investing':'#10b981','Other':'#64748b',
+}
+const donutData = computed(() => {
+    const labels = props.categories.map(c => c.label)
+    const data   = props.categories.map(c => c.value)
+    const bg     = labels.map(l => COLOR_BY_CATEGORY[l] ?? '#d1d5db')
+    return { labels, datasets:[{ data, backgroundColor:bg,
+            hoverBackgroundColor:bg, borderWidth:0 }] }
 })
 
-const donutData = computed(() => ({
-    labels  : props.categories.map(c => c.label),
-    datasets: [{ data: props.categories.map(c => c.value) }],
-}))
+/* ───────────── month-picker state (CalendarDate) ───────────── */
+function makeCalDate(y:number,m:number){ return new CalendarDate(y,m,1) }
+const pickedDate = ref<CalendarDate>(
+    props.date
+        ? makeCalDate(+props.date.slice(0,4), +props.date.slice(5,7))
+        : makeCalDate(new Date().getFullYear(), new Date().getMonth()+1)
+)
+const pickedMonth = computed(() =>
+    `${pickedDate.value.year}-${String(pickedDate.value.month).padStart(2,'0')}`
+)
+
+/* ───────────── currency tabs state ───────────── */
+const currencyTab = ref<'USD'|'IDR'>(props.currency)
+
+/*  react to changes  */
+watch(pickedMonth, (val) => {
+    router.get('/dashboard',
+        { currency: currencyTab.value, date: val },
+        { preserveState:true, replace:true },
+    )
+})
+watch(currencyTab, (val) => {
+    router.get('/dashboard',
+        { currency: val, date: pickedMonth.value },
+        { preserveState:true, replace:true },
+    )
+})
 </script>
 
 <template>
     <Head title="Dashboard" />
-    <AppLayout :breadcrumbs="[{ title: 'Dashboard', href: '/dashboard' }]" class="px-2">
-        <div class="mb-1 ml-4 flex gap-2 p-2">
-            <button
-                v-for="c in ['USD','IDR']"
-                :key="c"
-                @click="$inertia.get('/dashboard', { currency: c })"
-                :class="[
-                   'px-3 py-1 rounded text-sm',
-                   c === props.currency ? 'bg-primary text-black' : 'bg-muted'
-                ]"
-            >
-                {{ c }}
-            </button>
+
+    <AppLayout :breadcrumbs="[{ title:'Dashboard', href:'/dashboard' }]" class="px-2">
+
+        <!-- ── control strip ───────────────────────────────────────── -->
+        <div class="mb-1 ml-4 flex flex-wrap gap-3 p-2">
+
+            <!-- currency toggle as Tabs -->
+            <Tabs v-model="currencyTab" class="w-[120px]">
+                <TabsList class="grid w-full grid-cols-2">
+                    <TabsTrigger value="USD">USD</TabsTrigger>
+                    <TabsTrigger value="IDR">IDR</TabsTrigger>
+                </TabsList>
+            </Tabs>
+
+            <!-- month picker -->
+            <Popover>
+                <PopoverTrigger as-child>
+                    <button
+                        class="flex h-9 items-center gap-2 rounded border bg-background px-3 text-sm"
+                    >
+                        <CalendarIcon class="h-4 w-4 opacity-50" />
+                        <span>{{ pickedMonth }}</span>
+                    </button>
+                </PopoverTrigger>
+                <PopoverContent class="p-0">
+                    <Calendar v-model="pickedDate" mode="single" initial-focus />
+                </PopoverContent>
+            </Popover>
         </div>
-        <section class="grid gap-6 md:grid-cols-3 xl:grid-cols-4 px-3">
+
+        <!-- ── dashboard grid ──────────────────────────────────────── -->
+        <section class="grid gap-6 px-3 md:grid-cols-3 xl:grid-cols-4">
+
+            <!-- metrics -->
             <Card class="col-span-full sm:col-span-1">
                 <CardHeader>
                     <CardDescription>Total Income</CardDescription>
@@ -77,50 +150,62 @@ const donutData = computed(() => ({
             <Card class="col-span-full sm:col-span-1">
                 <CardHeader>
                     <CardDescription>Net Balance</CardDescription>
-                    <CardTitle class="text-3xl text-emerald-400">{{ metrics.netPct }}%</CardTitle>
+                    <CardTitle class="text-3xl text-emerald-400">
+                        {{ metrics.netPct }}%
+                    </CardTitle>
                 </CardHeader>
             </Card>
 
-            <!-- Donut ------------------------------------------------------------->
+            <!-- donut -->
             <Card class="row-span-2">
                 <CardHeader><CardTitle>Spending Categories</CardTitle></CardHeader>
-                <CardContent class="h-72 flex items-center justify-center">
-                    <Doughnut :data="donutData" :options="{ plugins: { legend: { position:'right' } } }" />
+                <CardContent class="flex h-56 flex-col items-center justify-center">
+                    <Doughnut :data="donutData" :options="{
+            responsive:true,
+            plugins:{ legend:{ position:'bottom', align:'start',
+                               labels:{ boxWidth:24, boxHeight:14 } } }
+          }" />
                 </CardContent>
             </Card>
 
-            <!-- Line chart -------------------------------------------------------->
+            <!-- line -->
             <Card class="col-span-full xl:col-span-3">
                 <CardHeader><CardTitle>Income & Expenses</CardTitle></CardHeader>
-                <CardContent class="h-72">
-                    <Line :data="lineData" :options="{ responsive: true, maintainAspectRatio: false }" />
+                <CardContent class="h-56">
+                    <Line :data="lineData" :options="{ responsive:true, maintainAspectRatio:false }" />
                 </CardContent>
             </Card>
 
-            <!-- Recent transactions --------------------------------------------->
+            <!-- recent transactions -->
             <Card class="col-span-full xl:col-span-3">
                 <CardHeader><CardTitle>Recent Transactions</CardTitle></CardHeader>
                 <CardContent class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="border-b border-border">
                         <tr class="text-left text-muted-foreground">
-                            <th class="py-2 px-3 whitespace-nowrap">Date</th>
-                            <th class="py-2 px-3 max-w-[40ch] truncate">Description</th>
-                            <th class="py-2 px-3 whitespace-nowrap">Category</th>
-                            <th class="py-2 px-3 text-right whitespace-nowrap">Amount</th>
+                            <th class="px-3 py-2 whitespace-nowrap">Date</th>
+                            <th class="px-3 py-2 max-w-[40ch] truncate">Description</th>
+                            <th class="px-3 py-2 whitespace-nowrap">Category</th>
+                            <th class="px-3 py-2 whitespace-nowrap text-right">Amount</th>
                         </tr>
                         </thead>
                         <tbody>
                         <tr
-                            v-for="t in recent"
-                            :key="t.id"
+                            v-for="t in recent" :key="t.id"
                             class="border-b border-border/50 last:border-0"
                         >
-                            <td class="py-2 px-3 whitespace-nowrap">{{ t.date }}</td>
-                            <td class="py-2 px-3 max-w-[40ch] truncate">{{ t.description }}</td>
-                            <td class="py-2 px-3 whitespace-nowrap">{{ t.category }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ t.date }}</td>
+                            <td class="px-3 py-2 max-w-[40ch]">
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <span class="block truncate">{{ t.description }}</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{{ t.description }}</TooltipContent>
+                                </Tooltip>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ t.category }}</td>
                             <td
-                                class="py-2 px-3 text-right whitespace-nowrap"
+                                class="px-3 py-2 whitespace-nowrap text-right"
                                 :class="t.amount < 0 ? 'text-red-400' : 'text-emerald-400'"
                             >
                                 {{ money(t.amount, t.currency) }}
@@ -131,14 +216,13 @@ const donutData = computed(() => ({
                 </CardContent>
             </Card>
 
+            <!-- coach stub -->
             <Card class="row-span-2">
                 <CardHeader><CardTitle>AI Finance Coach</CardTitle></CardHeader>
                 <CardContent class="space-y-4">
-                    <p class="p-4 rounded-lg bg-muted">
-                        Consider reducing your spending on shopping to increase your
-                        savings.
+                    <p class="rounded-lg bg-muted p-4">
+                        Consider reducing your spending on shopping to increase your savings.
                     </p>
-
                     <input
                         class="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none"
                         placeholder="Type a message…"

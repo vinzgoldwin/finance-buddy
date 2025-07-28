@@ -21,8 +21,14 @@ class DashboardController extends Controller
             $currency = 'USD';
         }
 
+        $monthStr  = $request->query('date', now()->format('Y-m'));
+        [$y, $m]   = array_pad(explode('-', $monthStr), 2, null);
+        $startDate = Carbon::createSafe((int) $y,(int) $m, 1)->startOfMonth();
+        $endDate   = $startDate->copy()->endOfMonth();
+
         // ── 2. One query for all totals, grouped by native currency ────────
-        $rows = Transaction::selectRaw(
+        $rows = Transaction::whereBetween('date', [$startDate, $endDate])
+            ->selectRaw(
             'currency,
              SUM(CASE WHEN category_id = ?  THEN amount ELSE 0 END) AS income,
              SUM(CASE WHEN category_id != ? THEN amount ELSE 0 END) AS expense',
@@ -104,6 +110,7 @@ class DashboardController extends Controller
         // ------------------------------------------------------------------
         return Inertia::render('Dashboard', [
             'currency'     => $currency,
+            'date'         => $monthStr,
             'metrics'      => [
                 'income'   => $income,
                 'expenses' => $expense,

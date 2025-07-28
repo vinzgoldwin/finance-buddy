@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->date('occurred_at')->change();
+            $table->renameColumn('occurred_at', 'date');
         });
     }
 
     public function down(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->dateTime('occurred_at')->change();
+            $table->renameColumn('date', 'occurred_at');
         });
     }
 };

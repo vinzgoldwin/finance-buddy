@@ -13,12 +13,11 @@ const props = defineProps<{
     metrics: Metrics
     monthly: Array<{ month: string; income: number; expenses: number }>
     categories: Array<{ label: string; value: number }>
-    recent: Array<{ id: number; date: string; description: string; category: string; amount: number }>
+    recent: Array<{ id: number; date: string; description: string; category: string; amount: number; currency: string }>
+    currency: 'USD' | 'IDR'
 }>()
 
-// Formatters
-const money = (v: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v)
+const money = (v: number, curr: string = props.currency) => new Intl.NumberFormat(curr === 'IDR' ? 'id-ID' : 'en-US', { style: 'currency', currency: curr }).format(v)
 
 const lineData = computed(() => {
     return {
@@ -46,9 +45,21 @@ const donutData = computed(() => ({
 
 <template>
     <Head title="Dashboard" />
-    <AppLayout :breadcrumbs="[{ title: 'Dashboard', href: '/dashboard' }]" class="px-4">
-        <section class="grid gap-6 md:grid-cols-3 xl:grid-cols-4">
-            <!-- Metric cards ------------------------------------------------------>
+    <AppLayout :breadcrumbs="[{ title: 'Dashboard', href: '/dashboard' }]" class="px-2">
+        <div class="mb-1 ml-4 flex gap-2 p-2">
+            <button
+                v-for="c in ['USD','IDR']"
+                :key="c"
+                @click="$inertia.get('/dashboard', { currency: c })"
+                :class="[
+                   'px-3 py-1 rounded text-sm',
+                   c === props.currency ? 'bg-primary text-black' : 'bg-muted'
+                ]"
+            >
+                {{ c }}
+            </button>
+        </div>
+        <section class="grid gap-6 md:grid-cols-3 xl:grid-cols-4 px-3">
             <Card class="col-span-full sm:col-span-1">
                 <CardHeader>
                     <CardDescription>Total Income</CardDescription>
@@ -93,10 +104,10 @@ const donutData = computed(() => ({
                     <table class="min-w-full text-sm">
                         <thead class="border-b border-border">
                         <tr class="text-left text-muted-foreground">
-                            <th class="py-2 px-3">Date</th>
-                            <th class="py-2 px-3">Description</th>
-                            <th class="py-2 px-3">Category</th>
-                            <th class="py-2 px-3 text-right">Amount</th>
+                            <th class="py-2 px-3 whitespace-nowrap">Date</th>
+                            <th class="py-2 px-3 max-w-[40ch] truncate">Description</th>
+                            <th class="py-2 px-3 whitespace-nowrap">Category</th>
+                            <th class="py-2 px-3 text-right whitespace-nowrap">Amount</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -105,14 +116,14 @@ const donutData = computed(() => ({
                             :key="t.id"
                             class="border-b border-border/50 last:border-0"
                         >
-                            <td class="py-2 px-3">{{ t.date }}</td>
-                            <td class="py-2 px-3">{{ t.description }}</td>
-                            <td class="py-2 px-3">{{ t.category }}</td>
+                            <td class="py-2 px-3 whitespace-nowrap">{{ t.date }}</td>
+                            <td class="py-2 px-3 max-w-[40ch] truncate">{{ t.description }}</td>
+                            <td class="py-2 px-3 whitespace-nowrap">{{ t.category }}</td>
                             <td
-                                class="py-2 px-3 text-right"
+                                class="py-2 px-3 text-right whitespace-nowrap"
                                 :class="t.amount < 0 ? 'text-red-400' : 'text-emerald-400'"
                             >
-                                {{ money(t.amount) }}
+                                {{ money(t.amount, t.currency) }}
                             </td>
                         </tr>
                         </tbody>

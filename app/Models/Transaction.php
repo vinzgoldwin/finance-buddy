@@ -10,7 +10,7 @@ class Transaction extends Model
 {
     protected $fillable = [
         'user_id',
-        'occurred_at',
+        'date',
         'description',
         'amount',
         'currency',
@@ -19,7 +19,7 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'occurred_at' => 'date',
+        'date'        => 'date',
         'meta'        => 'array',
     ];
 

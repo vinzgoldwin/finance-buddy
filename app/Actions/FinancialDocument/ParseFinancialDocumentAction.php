@@ -31,7 +31,7 @@ class ParseFinancialDocumentAction
             $categoryId = Category::where('name', $row['category'] ?? 'Other')->value('id');
 
             return Transaction::create([
-                'occurred_at'  => $row['date']        ?? null,
+                'date'        => $row['date']        ?? null,
                 'description' => $row['description'] ?? 'Unknown',
                 'amount'      => $row['amount']      ?? 0,
                 'currency'    => $row['currency']    ?? 'Unknown',

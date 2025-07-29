@@ -24,15 +24,15 @@ const props = withDefaults(defineProps<BaseChartProps<T> & {
    */
   roundedCorners?: number
 }>(), {
-  type: 'grouped',
-  margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
-  filterOpacity: 0.2,
-  roundedCorners: 0,
-  showXAxis: true,
-  showYAxis: true,
-  showTooltip: true,
-  showLegend: true,
-  showGridLine: true,
+    type: 'grouped',
+    margin: () => ({ top: 20, bottom: 40, left: 10, right: 20 }),
+    filterOpacity: 0.2,
+    roundedCorners: 0,
+    showXAxis: true,
+    showYAxis: true,
+    showTooltip: true,
+    showLegend: true,
+    showGridLine: true,
 })
 const emits = defineEmits<{
   legendItemClick: [d: BulletLegendItemInterface, i: number]
@@ -92,7 +92,7 @@ const selectorsBar = computed(() => props.type === 'grouped' ? GroupedBar.select
         :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
         :grid-line="false"
         :tick-line="false"
-        tick-text-color="hsl(var(--vis-text-color))"
+        tick-text-color="var(--vis-text-color)"
       />
       <VisAxis
         v-if="showYAxis"
@@ -106,7 +106,7 @@ const selectorsBar = computed(() => props.type === 'grouped' ? GroupedBar.select
             class: 'text-muted',
           },
         }"
-        tick-text-color="hsl(var(--vis-text-color))"
+        tick-text-color="var(--vis-text-color)"
       />
 
       <slot />

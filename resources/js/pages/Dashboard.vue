@@ -181,7 +181,7 @@ watch(currencyTab, (val) => {
             <!-- Bar Chart -->
             <Card class="col-span-full xl:col-span-3">
                 <CardHeader><CardTitle>6-Month Income vs Expenses</CardTitle></CardHeader>
-                <CardContent class="h-60 overflow-hidden">
+                <CardContent class="h-60 ">
                     <BarChart
                         class="h-full"
                         :data="barData"

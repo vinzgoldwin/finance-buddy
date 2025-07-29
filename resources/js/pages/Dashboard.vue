@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import {
     Card, CardHeader, CardTitle, CardDescription, CardContent,
 } from '@/components/ui/card'
+import { BarChart } from '@/components/ui/chart-bar'
 import { Line, Doughnut } from 'vue-chartjs'
 import {
     CategoryScale, LinearScale, PointElement, LineElement,
@@ -38,7 +39,8 @@ const props = defineProps<{
         category:string; amount:number; currency:string
     }>
     currency: 'USD' | 'IDR'
-    date?: string   // “YYYY-MM” from the controller
+    date?: string
+    barData: Array<{ name:string; income:number; expenses:number }>
 }>()
 
 /* ───────────── helpers ───────────── */
@@ -67,6 +69,10 @@ const donutData = computed(() => {
     return { labels, datasets:[{ data, backgroundColor:bg,
             hoverBackgroundColor:bg, borderWidth:0 }] }
 })
+
+
+const barData = computed(() => props.barData)
+
 
 /* ───────────── month-picker state (CalendarDate) ───────────── */
 function makeCalDate(y:number,m:number){ return new CalendarDate(y,m,1) }
@@ -170,9 +176,16 @@ watch(currencyTab, (val) => {
 
             <!-- line -->
             <Card class="col-span-full xl:col-span-3">
-                <CardHeader><CardTitle>Income & Expenses</CardTitle></CardHeader>
-                <CardContent class="h-56">
-                    <Line :data="lineData" :options="{ responsive:true, maintainAspectRatio:false }" />
+                <CardHeader><CardTitle>6-Month Income vs Expenses</CardTitle></CardHeader>
+                <CardContent class="h-60 overflow-hidden">
+                    <BarChart
+                        class="h-full"
+                        :data="barData"
+                        index="name"
+                        :categories="['income', 'expenses']"
+                        :y-formatter="tick =>
+                        typeof tick === 'number' ? money(tick, currencyTab)  : ''"
+                    />
                 </CardContent>
             </Card>
 

@@ -24,6 +24,8 @@ class FileController extends Controller
      */
     public function store(Request $request, ParseFinancialDocumentAction $parseDoc): RedirectResponse
     {
+        set_time_limit(150);
+
         $validated = $request->validate([
             'file' => ['required', 'file', 'mimes:pdf', 'max:5120', new PdfMaxPages(10)],
         ]);

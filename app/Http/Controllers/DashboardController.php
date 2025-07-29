@@ -13,7 +13,7 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $incomeCategoryId = (int) config('finance.income_category_id', 12);
+        $incomeCategoryId = (int) config('finance.income_category_id', 1);
 
         $currency  = strtoupper($request->query('currency', 'USD'));
 
@@ -25,6 +25,46 @@ class DashboardController extends Controller
         [$y, $m]   = array_pad(explode('-', $monthStr), 2, null);
         $startDate = Carbon::createSafe((int) $y,(int) $m, 1)->startOfMonth();
         $endDate   = $startDate->copy()->endOfMonth();
+
+        $periodStart = $startDate->copy()->subMonths(5)->startOfMonth();
+
+        $barRaw = Transaction::whereBetween('date', [$periodStart, $endDate])
+            ->selectRaw(
+                'YEAR(date)  as yr,
+                           MONTH(date) as mo,
+                           currency,
+                           SUM(CASE WHEN category_id = ? THEN amount ELSE 0 END)  as income,
+                           SUM(CASE WHEN category_id != ? THEN amount ELSE 0 END) as expenses',
+                [$incomeCategoryId, $incomeCategoryId]
+            )
+            ->groupBy('yr', 'mo', 'currency')
+            ->get();
+
+        $barData = collect(range(0,5))
+            ->map(function ($offset) use ($periodStart, $barRaw, $currency, $incomeCategoryId) {
+                $month = $periodStart->copy()->addMonths($offset);
+                $rows  = $barRaw->where('yr', $month->year)->where('mo', $month->month);
+
+                // split native amounts by currency
+                $usdInc = (float) $rows->where('currency','USD')->sum('income');
+                $usdExp = (float) $rows->where('currency','USD')->sum('expenses');
+                $idrInc = (float) $rows->where('currency','IDR')->sum('income');
+                $idrExp = (float) $rows->where('currency','IDR')->sum('expenses');
+
+                if ($currency === 'IDR') {
+                    $usdInc = $usdInc ? CurrencyConverter::convert($usdInc)->from('USD')->to('IDR')->get() : 0;
+                    $usdExp = $usdExp ? CurrencyConverter::convert($usdExp)->from('USD')->to('IDR')->get() : 0;
+                } else {
+                    $idrInc = $idrInc ? CurrencyConverter::convert($idrInc)->from('IDR')->to('USD')->get() : 0;
+                    $idrExp = $idrExp ? CurrencyConverter::convert($idrExp)->from('IDR')->to('USD')->get() : 0;
+                }
+
+                return [
+                    'name'     => $month->format('M'),
+                    'income'   => round($usdInc + $idrInc, 2),
+                    'expenses' => round($usdExp + $idrExp, 2),
+                ];
+            });
 
         // ── 2. One query for all totals, grouped by native currency ────────
         $rows = Transaction::whereBetween('date', [$startDate, $endDate])
@@ -119,6 +159,7 @@ class DashboardController extends Controller
             'monthly'     => $monthly,
             'categories'  => $categories,
             'recent'      => $recent,
+            'barData'     => $barData,
         ]);
     }
 }

@@ -7,7 +7,7 @@ use OpenAI\Laravel\Facades\OpenAI;
 class OpenAiTransactionParserService
 {
     private const PROMPT_TEMPLATE = <<<'PROMPT'
-            You are tasked with extracting transaction information from a PDF document, which could be a statement, invoice, or receipt. Your goal is to create a list of JSON objects representing the transactions found in the document. Here is the content extracted from the PDF:
+            You are an AI assistant tasked with extracting transaction information from a PDF document, which could be a statement, invoice, or receipt. Your goal is to create a comprehensive list of JSON objects representing all the transactions found in the document. Here is the content extracted from the PDF:
 
             <pdf_content>
             {{PDF_CONTENT}}
@@ -15,25 +15,26 @@ class OpenAiTransactionParserService
 
             Please follow these instructions to complete the task:
 
-            1. Analyze the content to determine if it's a statement, invoice, or receipt.
+            1. Determine if the document is a statement, invoice, or receipt based on its content and structure.
 
             2. Extract the following information for each transaction:
-               - date (date with time)
+               - date (date with time if available, otherwise just the date)
                - description
                - amount
                - currency
                - category (you will determine this based on the description)
 
-            3. For statements:
-               - Look for multiple transactions and process each one separately.
-               - Pay attention to date formats, which may vary.
+            3. Pay special attention to statements:
+               - Statements typically contain multiple transactions. It's crucial that you identify and process EVERY single transaction listed in the statement.
+               - Carefully examine the entire document for any transaction-like entries, including those that might be formatted differently or appear in unexpected sections.
+               - Be aware that date formats may vary within the same document. Adapt your parsing accordingly.
                - Ensure that credits and debits are correctly represented in the amount field.
-               - Convert any negative amount to its positive numeric value (e.g., “-1875000.00” ⇒ “1875000.00”).
+               - For any amount that appears as a negative value, convert it to its positive numeric equivalent (e.g., "-1875000.00" should become "1875000.00").
 
             4. For invoices and receipts:
-               - These typically contain only one transaction.
-               - The transaction date is usually the invoice or receipt date.
-               - The amount is typically the total amount due or paid.
+               - These typically contain only one main transaction, but be alert for any additional charges or fees listed separately.
+               - Use the invoice or receipt date as the transaction date if no specific transaction date is provided.
+               - The transaction amount is usually the total amount due or paid, but verify if there are any itemized charges that should be treated as separate transactions.
 
             5. When determining the category, use the following guidelines:
                - Income: Salary payments, refunds, reimbursements
@@ -87,9 +88,9 @@ class OpenAiTransactionParserService
         $prompt = str_replace('{{PDF_CONTENT}}', $pdfText, self::PROMPT_TEMPLATE);
 
         $response = OpenAI::chat()->create([
-            'model'       => 'together_ai/Qwen/Qwen3-235B-A22B-Instruct-2507-tput',
+            'model'       => 'claude-3-5-haiku',
             'temperature' => 0,
-            'max_tokens'  => 2048,
+            'max_tokens'  => 7000,
             'messages'    => [
                 [
                     'role'    => 'system',

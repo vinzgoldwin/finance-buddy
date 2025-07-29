@@ -155,11 +155,14 @@ watch(currencyTab, (val) => {
             <!-- donut -->
             <Card class="row-span-2">
                 <CardHeader><CardTitle>Spending Categories</CardTitle></CardHeader>
-                <CardContent class="flex h-56 flex-col items-center justify-center">
+                <CardContent class="flex min-h-56 flex-col items-center justify-center">
+                    <div class="w-full h-64">
                     <Doughnut
                         :data="donutData"
                         :options="{
                             responsive:true,
+                            maintainAspectRatio: false,
+                            layout: { padding: { bottom: 10} },
                             plugins: {
                                 legend: {
                                    position:'bottom',
@@ -172,10 +175,11 @@ watch(currencyTab, (val) => {
                             }
                         }"
                     />
+                    </div>
                 </CardContent>
             </Card>
 
-            <!-- line -->
+            <!-- Bar Chart -->
             <Card class="col-span-full xl:col-span-3">
                 <CardHeader><CardTitle>6-Month Income vs Expenses</CardTitle></CardHeader>
                 <CardContent class="h-60 overflow-hidden">

@@ -136,6 +136,10 @@ const formatDate = (dateString: string) => {
     })
 }
 
+const formatDateForInput = (dateString: string) => {
+    return new Date(dateString).toISOString().split('T')[0]
+}
+
 const getCategoryColor = (categoryName: string) => {
     const colors: Record<string, string> = {
         'Housing & Utilities': 'bg-blue-100 text-blue-800',
@@ -162,7 +166,7 @@ const openCreateModal = () => {
 
 const openEditModal = (transaction: Transaction) => {
     editingTransaction.value = transaction
-    editForm.date = transaction.date
+    editForm.date = formatDateForInput(transaction.date)
     editForm.description = transaction.description
     editForm.amount = Math.abs(transaction.amount)
     editForm.currency = transaction.currency
@@ -372,14 +376,14 @@ watch([currentYear, currentMonth], applyFilters)
             </div>
             <div class="flex gap-2">
                 <Button
-                    v-for="link in transactions.links"
-                    :key="link.label"
+                    v-for="(link, idx) in transactions.links"
+                    :key="idx"
                     :variant="link.active ? 'default' : 'outline'"
                     :disabled="!link.url"
                     size="sm"
                     @click="link.url && router.visit(link.url)"
                 >
-                    {{ link.label.replace('&laquo;', '‹').replace('&raquo;', '›') }}
+                    {{idx === 0 ? 'Previous' : idx === transactions.links.length - 1 ? 'Next' : link.label}}
                 </Button>
             </div>
         </div>

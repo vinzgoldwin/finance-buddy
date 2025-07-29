@@ -17,20 +17,20 @@ class TransactionController extends Controller
     {
         $year = $request->query('year', Carbon::now()->year);
         $month = $request->query('month');
-        
+
         $query = Transaction::with('category')
             ->whereYear('date', $year);
-            
+
         if ($month) {
             $query->whereMonth('date', $month);
         }
-        
+
         $transactions = $query->orderBy('date', 'desc')
             ->paginate(20)
             ->withQueryString();
-            
+
         $categories = Category::orderBy('name')->get();
-        
+
         return Inertia::render('Transactions', [
             'transactions' => $transactions,
             'categories' => $categories,

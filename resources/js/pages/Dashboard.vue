@@ -97,7 +97,7 @@ watch(currencyTab, (val) => {
     <AppLayout :breadcrumbs="[{ title:'Dashboard', href:'/dashboard' }]" class="px-2">
 
         <!-- ── control strip ───────────────────────────────────────── -->
-        <div class="mb-1 ml-4 flex flex-wrap gap-3 p-2">
+        <div class="mb-1 flex flex-wrap gap-3 p-2 sm:ml-4">
 
             <!-- currency toggle as Tabs -->
             <Tabs v-model="currencyTab" class="w-[120px]">
@@ -125,7 +125,7 @@ watch(currencyTab, (val) => {
         </div>
 
         <!-- ── dashboard grid ──────────────────────────────────────── -->
-        <section class="grid gap-6 px-3 md:grid-cols-3 xl:grid-cols-4">
+        <section class="grid gap-6 px-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
 
             <!-- metrics -->
             <Card class="col-span-full sm:col-span-1">
@@ -152,10 +152,10 @@ watch(currencyTab, (val) => {
             </Card>
 
             <!-- donut -->
-            <Card class="row-span-2">
+            <Card class="col-span-full sm:col-span-2 md:col-span-1 md:row-span-2">
                 <CardHeader><CardTitle>Spending Categories</CardTitle></CardHeader>
                 <CardContent class="flex min-h-56 flex-col items-center justify-center">
-                    <div class="w-full h-64">
+                    <div class="w-full h-48 sm:h-64">
                     <Doughnut
                         :data="donutData"
                         :options="{
@@ -181,7 +181,7 @@ watch(currencyTab, (val) => {
             <!-- Bar Chart -->
             <Card class="col-span-full xl:col-span-3">
                 <CardHeader><CardTitle>6-Month Income vs Expenses</CardTitle></CardHeader>
-                <CardContent class="h-60 ">
+                <CardContent class="h-48 sm:h-60">
                     <BarChart
                         class="h-full"
                         :data="barData"
@@ -234,7 +234,7 @@ watch(currencyTab, (val) => {
             </Card>
 
             <!-- coach stub -->
-            <Card class="row-span-2">
+            <Card class="col-span-full sm:col-span-2 md:col-span-1 md:row-span-2">
                 <CardHeader><CardTitle>AI Finance Coach</CardTitle></CardHeader>
                 <CardContent class="space-y-4">
                     <p class="rounded-lg bg-muted p-4">

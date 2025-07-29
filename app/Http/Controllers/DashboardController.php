@@ -22,6 +22,13 @@ class DashboardController extends Controller
         }
 
         $monthStr  = $request->query('date', now()->format('Y-m'));
+        $monthOptions = collect(range(0, 5))->map(function ($i) {
+            $date = now()->subMonths($i);
+            return [
+                'value' => $date->format('Y-m'),
+                'label' => $date->translatedFormat('F Y'),
+            ];
+        });
         [$y, $m]   = array_pad(explode('-', $monthStr), 2, null);
         $startDate = Carbon::createSafe((int) $y,(int) $m, 1)->startOfMonth();
         $endDate   = $startDate->copy()->endOfMonth();
@@ -151,6 +158,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'currency'     => $currency,
             'date'         => $monthStr,
+            'monthOptions' => $monthOptions,
             'metrics'      => [
                 'income'   => $income,
                 'expenses' => $expense,

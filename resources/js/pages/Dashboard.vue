@@ -14,14 +14,15 @@ import {
 } from 'chart.js'
 
 /*  shadcn-vue controls  */
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import { CalendarIcon } from 'lucide-vue-next'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
-
-/*  Date helpers for Reka UI  */
-import { CalendarDate } from '@internationalized/date'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 
 ChartJS.register(
     CategoryScale, LinearScale, PointElement,
@@ -40,6 +41,7 @@ const props = defineProps<{
     }>
     currency: 'USD' | 'IDR'
     date?: string
+    monthOptions: Array<{ value:string; label:string }>
     barData: Array<{ name:string; income:number; expenses:number }>
 }>()
 
@@ -64,31 +66,27 @@ const donutData = computed(() => {
 
 const barData = computed(() => props.barData)
 
-/* ───────────── month-picker state (CalendarDate) ───────────── */
-function makeCalDate(y:number,m:number){ return new CalendarDate(y,m,1) }
-const pickedDate = ref<CalendarDate>(
-    props.date
-        ? makeCalDate(+props.date.slice(0,4), +props.date.slice(5,7))
-        : makeCalDate(new Date().getFullYear(), new Date().getMonth()+1)
-)
-const pickedMonth = computed(() =>
-    `${pickedDate.value.year}-${String(pickedDate.value.month).padStart(2,'0')}`
+/* ───────────── month-picker state ───────────── */
+const monthOptions = props.monthOptions
+const today = new Date()
+const currentMonth = ref(
+    props.date ?? monthOptions[0]?.value ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 )
 
 /* ───────────── currency tabs state ───────────── */
 const currencyTab = ref<'USD'|'IDR'>(props.currency)
 
 /*  react to changes  */
-watch(pickedMonth, (val) => {
+watch(currentMonth, (val) => {
     router.get('/dashboard',
         { currency: currencyTab.value, date: val },
-        { preserveState:true, replace:true },
+        { preserveState: true, replace: true },
     )
 })
 watch(currencyTab, (val) => {
     router.get('/dashboard',
-        { currency: val, date: pickedMonth.value },
-        { preserveState:true, replace:true },
+        { currency: val, date: currentMonth.value },
+        { preserveState: true, replace: true },
     )
 })
 </script>
@@ -110,19 +108,20 @@ watch(currencyTab, (val) => {
             </Tabs>
 
             <!-- month picker -->
-            <Popover>
-                <PopoverTrigger as-child>
-                    <button
-                        class="flex h-9 items-center gap-2 rounded border bg-background px-3 text-sm"
+            <Select v-model="currentMonth">
+                <SelectTrigger class="w-[150px]">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem
+                        v-for="opt in monthOptions"
+                        :key="opt.value"
+                        :value="opt.value"
                     >
-                        <CalendarIcon class="h-4 w-4 opacity-50" />
-                        <span>{{ pickedMonth }}</span>
-                    </button>
-                </PopoverTrigger>
-                <PopoverContent class="p-0">
-                    <Calendar v-model="pickedDate" mode="single" initial-focus />
-                </PopoverContent>
-            </Popover>
+                        {{ opt.label }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
         </div>
 
         <!-- ── dashboard grid ──────────────────────────────────────── -->

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\FileController;
@@ -9,7 +10,12 @@ Route::get('/', function () {return Inertia::render('Welcome');})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('transactions', function () {return Inertia::render('Transactions');})->name('transactions');
+    
+    Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
+    Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
+    
     Route::get('advisor', function () {return Inertia::render('AIAdvisor');})->name('advisor');
 
     Route::get('files/upload', [FileController::class, 'create'])->name('files.create');

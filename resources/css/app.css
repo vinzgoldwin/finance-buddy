@@ -123,12 +123,12 @@
     --vis-tooltip-border-color:     none !important;
     --vis-tooltip-text-color:       none !important;
     --vis-tooltip-shadow-color:     none !important;
-    --vis-tooltip-backdrop-filter:  none !important;
+    --vis-tooltip-backdrop-filter:   none !important;
     --vis-tooltip-padding:          none !important;
 
     /* brand colors for charts/tooltips */
     --vis-primary-color:   var(--primary);
-    --vis-secondary-color: 160 81% 40%;        /* tweak as needed */
+    --vis-secondary-color: 160 81% 40%;
     --vis-text-color:      var(--muted-foreground);
 }
 
@@ -166,16 +166,16 @@
     --sidebar-border: hsl(0 0% 15.9%);
     --sidebar-ring: hsl(217.2 91.2% 59.8%);
     --sidebar: hsl(240 5.9% 10%);
-    /* ── Unovis tooltip override (dark) ── */
+
     --vis-tooltip-background-color: none !important;
     --vis-tooltip-border-color:     none !important;
     --vis-tooltip-text-color:       none !important;
     --vis-tooltip-shadow-color:     none !important;
-    --vis-tooltip-backdrop-filter:  none !important;
+    --vis-tooltip-backdrop-filter:   none !important;
     --vis-tooltip-padding:          none !important;
 
     /* brand colors for charts/tooltips in dark */
-    --vis-primary-color:   hsl(220 90% 70%);
+    --vis-primary-color: var(--foreground);
     --vis-secondary-color: 160 81% 60%;
     --vis-text-color:      hsl(0 0% 90%);
 }

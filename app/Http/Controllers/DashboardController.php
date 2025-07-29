@@ -15,10 +15,10 @@ class DashboardController extends Controller
     {
         $incomeCategoryId = (int) config('finance.income_category_id', 1);
 
-        $currency  = strtoupper($request->query('currency', 'USD'));
+        $currency  = strtoupper($request->query('currency', 'IDR'));
 
         if (! in_array($currency, ['USD', 'IDR'])) {
-            $currency = 'USD';
+            $currency = 'IDR';
         }
 
         $monthStr  = $request->query('date', now()->format('Y-m'));

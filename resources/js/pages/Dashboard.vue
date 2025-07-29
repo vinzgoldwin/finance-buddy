@@ -7,7 +7,7 @@ import {
     Card, CardHeader, CardTitle, CardDescription, CardContent,
 } from '@/components/ui/card'
 import { BarChart } from '@/components/ui/chart-bar'
-import { Line, Doughnut } from 'vue-chartjs'
+import { Doughnut } from 'vue-chartjs'
 import {
     CategoryScale, LinearScale, PointElement, LineElement,
     Title, ArcElement, Legend, Chart as ChartJS,
@@ -48,31 +48,21 @@ const money = (v:number, curr = props.currency) =>
     new Intl.NumberFormat(curr === 'IDR' ? 'id-ID' : 'en-US',
         { style:'currency', currency:curr }).format(v)
 
-/* ───────────── charts ───────────── */
-const lineData = computed(() => ({
-    labels: props.monthly.map(m => m.month),
-    datasets: [
-        { label:'Income',   data:props.monthly.map(m => m.income),   tension:0.4 },
-        { label:'Expenses', data:props.monthly.map(m => m.expenses), tension:0.4 },
-    ],
-}))
-
 const COLOR_BY_CATEGORY:Record<string,string> = {
     'Housing & Utilities':'#3b82f6','Food & Groceries':'#f97316',
     'Transport & Travel':'#0ea5e9','Health & Insurance':'#ef4444',
     'Shopping & Lifestyle':'#a855f7','Savings & Investing':'#10b981','Other':'#64748b',
 }
+
 const donutData = computed(() => {
     const labels = props.categories.map(c => c.label)
     const data   = props.categories.map(c => c.value)
     const bg     = labels.map(l => COLOR_BY_CATEGORY[l] ?? '#d1d5db')
-    return { labels, datasets:[{ data, backgroundColor:bg,
-            hoverBackgroundColor:bg, borderWidth:0 }] }
+    return { labels, datasets:[{ data, backgroundColor:bg, hoverBackgroundColor:bg, borderWidth:0 }] }
 })
 
 
 const barData = computed(() => props.barData)
-
 
 /* ───────────── month-picker state (CalendarDate) ───────────── */
 function makeCalDate(y:number,m:number){ return new CalendarDate(y,m,1) }
@@ -114,8 +104,8 @@ watch(currencyTab, (val) => {
             <!-- currency toggle as Tabs -->
             <Tabs v-model="currencyTab" class="w-[120px]">
                 <TabsList class="grid w-full grid-cols-2">
-                    <TabsTrigger value="USD">USD</TabsTrigger>
                     <TabsTrigger value="IDR">IDR</TabsTrigger>
+                    <TabsTrigger value="USD">USD</TabsTrigger>
                 </TabsList>
             </Tabs>
 
@@ -142,14 +132,14 @@ watch(currencyTab, (val) => {
             <Card class="col-span-full sm:col-span-1">
                 <CardHeader>
                     <CardDescription>Total Income</CardDescription>
-                    <CardTitle class="text-3xl">{{ money(metrics.income) }}</CardTitle>
+                    <CardTitle class="text-2xl">{{ money(metrics.income) }}</CardTitle>
                 </CardHeader>
             </Card>
 
             <Card class="col-span-full sm:col-span-1">
                 <CardHeader>
                     <CardDescription>Total Expenses</CardDescription>
-                    <CardTitle class="text-3xl">{{ money(metrics.expenses) }}</CardTitle>
+                    <CardTitle class="text-2xl">{{ money(metrics.expenses) }}</CardTitle>
                 </CardHeader>
             </Card>
 
@@ -166,11 +156,22 @@ watch(currencyTab, (val) => {
             <Card class="row-span-2">
                 <CardHeader><CardTitle>Spending Categories</CardTitle></CardHeader>
                 <CardContent class="flex h-56 flex-col items-center justify-center">
-                    <Doughnut :data="donutData" :options="{
-            responsive:true,
-            plugins:{ legend:{ position:'bottom', align:'start',
-                               labels:{ boxWidth:24, boxHeight:14 } } }
-          }" />
+                    <Doughnut
+                        :data="donutData"
+                        :options="{
+                            responsive:true,
+                            plugins: {
+                                legend: {
+                                   position:'bottom',
+                                   align:'start',
+                                   labels: {
+                                        boxWidth:24,
+                                        boxHeight:14
+                                    }
+                                }
+                            }
+                        }"
+                    />
                 </CardContent>
             </Card>
 

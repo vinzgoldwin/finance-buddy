@@ -17,11 +17,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 
 ChartJS.register(
@@ -45,10 +41,20 @@ const props = defineProps<{
     barData: Array<{ name:string; income:number; expenses:number }>
 }>()
 
+const email = 'test'.endsWith()
 /* ───────────── helpers ───────────── */
 const money = (v:number, curr = props.currency) =>
     new Intl.NumberFormat(curr === 'IDR' ? 'id-ID' : 'en-US',
         { style:'currency', currency:curr }).format(v)
+
+/** shorter labels for the bar‑chart Y‑axis */
+const moneyShort = (v:number, curr = props.currency) => {
+    if (curr === 'IDR' && Math.abs(v) >= 1_000_000) {
+        // show in millions
+        return `Rp ${Math.round(v / 1_000_000)} Juta`
+    }
+    return money(v, curr)
+}
 
 const COLOR_BY_CATEGORY:Record<string,string> = {
     'Housing & Utilities':'#3b82f6','Food & Groceries':'#f97316',
@@ -63,6 +69,13 @@ const donutData = computed(() => {
     return { labels, datasets:[{ data, backgroundColor:bg, hoverBackgroundColor:bg, borderWidth:0 }] }
 })
 
+/** simple legend items for the donut */
+const donutLegend = computed(() =>
+    donutData.value.labels.map((l, i) => ({
+        label: l,
+        color: donutData.value.datasets[0].backgroundColor[i] as string,
+    })),
+)
 
 const barData = computed(() => props.barData)
 
@@ -70,7 +83,7 @@ const barData = computed(() => props.barData)
 const monthOptions = props.monthOptions
 const today = new Date()
 const currentMonth = ref(
-    props.date ?? monthOptions[0]?.value ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+    props.date ?? monthOptions[0]?.value ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`,
 )
 
 /* ───────────── currency tabs state ───────────── */
@@ -97,19 +110,16 @@ watch(currencyTab, (val) => {
     <AppLayout :breadcrumbs="[{ title:'Dashboard', href:'/dashboard' }]" class="px-2">
 
         <!-- ── control strip ───────────────────────────────────────── -->
-        <div class="mb-1 ml-4 flex flex-wrap gap-3 p-2">
-
-            <!-- currency toggle as Tabs -->
-            <Tabs v-model="currencyTab" class="w-[120px]">
+        <div class="mb-1 flex flex-wrap gap-3 p-2 sm:ml-4">
+            <Tabs v-model="currencyTab" class="w-[112px]">
                 <TabsList class="grid w-full grid-cols-2">
                     <TabsTrigger value="IDR">IDR</TabsTrigger>
                     <TabsTrigger value="USD">USD</TabsTrigger>
                 </TabsList>
             </Tabs>
 
-            <!-- month picker -->
             <Select v-model="currentMonth">
-                <SelectTrigger class="w-[150px]">
+                <SelectTrigger class="w-[140px]">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -125,24 +135,26 @@ watch(currencyTab, (val) => {
         </div>
 
         <!-- ── dashboard grid ──────────────────────────────────────── -->
-        <section class="grid gap-6 px-3 md:grid-cols-3 xl:grid-cols-4">
+        <!-- now single‑column on mobile -->
+        <section class="grid grid-cols-1 gap-6 px-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
 
             <!-- metrics -->
-            <Card class="col-span-full sm:col-span-1">
+            <Card>
                 <CardHeader>
                     <CardDescription>Total Income</CardDescription>
                     <CardTitle class="text-2xl">{{ money(metrics.income) }}</CardTitle>
                 </CardHeader>
             </Card>
 
-            <Card class="col-span-full sm:col-span-1">
+            <Card>
                 <CardHeader>
                     <CardDescription>Total Expenses</CardDescription>
                     <CardTitle class="text-2xl">{{ money(metrics.expenses) }}</CardTitle>
                 </CardHeader>
             </Card>
 
-            <Card class="col-span-full sm:col-span-1">
+            <!-- wrap correctly on all widths -->
+            <Card class="sm:col-span-2 md:col-span-1">
                 <CardHeader>
                     <CardDescription>Net Balance</CardDescription>
                     <CardTitle class="text-3xl text-emerald-400">
@@ -152,58 +164,63 @@ watch(currencyTab, (val) => {
             </Card>
 
             <!-- donut -->
-            <Card class="row-span-2">
+            <Card class="sm:col-span-2 md:col-span-1 md:row-span-2">
                 <CardHeader><CardTitle>Spending Categories</CardTitle></CardHeader>
-                <CardContent class="flex min-h-56 flex-col items-center justify-center">
-                    <div class="w-full h-64">
-                    <Doughnut
-                        :data="donutData"
-                        :options="{
-                            responsive:true,
-                            maintainAspectRatio: false,
-                            layout: { padding: { bottom: 10} },
-                            plugins: {
-                                legend: {
-                                   position:'bottom',
-                                   align:'start',
-                                   labels: {
-                                        boxWidth:24,
-                                        boxHeight:14
-                                    }
-                                }
-                            }
-                        }"
-                    />
+                <CardContent class="flex flex-col items-center">
+                    <div class="h-48 w-full sm:h-64">
+                        <Doughnut
+                            :data="donutData"
+                            :options="{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{ legend:{ display:false } },
+              }"
+                        />
                     </div>
+
+                    <!-- custom legend -->
+                    <ul class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+                        <li
+                            v-for="item in donutLegend"
+                            :key="item.label"
+                            class="flex items-center gap-1"
+                        >
+              <span
+                  class="inline-block h-2 w-2 rounded-full"
+                  :style="{ backgroundColor:item.color }"
+              />
+                            {{ item.label }}
+                        </li>
+                    </ul>
                 </CardContent>
             </Card>
 
             <!-- Bar Chart -->
-            <Card class="col-span-full xl:col-span-3">
-                <CardHeader><CardTitle>6-Month Income vs Expenses</CardTitle></CardHeader>
-                <CardContent class="h-60 ">
+            <Card class="sm:col-span-2 xl:col-span-3">
+                <CardHeader><CardTitle>6‑Month Income vs Expenses</CardTitle></CardHeader>
+                <CardContent class="h-48 sm:h-60">
                     <BarChart
                         class="h-full"
                         :data="barData"
                         index="name"
-                        :categories="['income', 'expenses']"
+                        :categories="['income','expenses']"
                         :y-formatter="tick =>
-                        typeof tick === 'number' ? money(tick, currencyTab)  : ''"
+              typeof tick === 'number' ? moneyShort(tick, currencyTab) : ''"
                     />
                 </CardContent>
             </Card>
 
             <!-- recent transactions -->
-            <Card class="col-span-full xl:col-span-3">
+            <Card class="sm:col-span-2 xl:col-span-3">
                 <CardHeader><CardTitle>Recent Transactions</CardTitle></CardHeader>
                 <CardContent class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="border-b border-border">
                         <tr class="text-left text-muted-foreground">
-                            <th class="px-3 py-2 whitespace-nowrap">Date</th>
-                            <th class="px-3 py-2 max-w-[40ch] truncate">Description</th>
-                            <th class="px-3 py-2 whitespace-nowrap">Category</th>
-                            <th class="px-3 py-2 whitespace-nowrap text-right">Amount</th>
+                            <th class="whitespace-nowrap px-3 py-2">Date</th>
+                            <th class="max-w-[40ch] truncate px-3 py-2">Description</th>
+                            <th class="whitespace-nowrap px-3 py-2">Category</th>
+                            <th class="whitespace-nowrap px-3 py-2 text-right">Amount</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -211,8 +228,8 @@ watch(currencyTab, (val) => {
                             v-for="t in recent" :key="t.id"
                             class="border-b border-border/50 last:border-0"
                         >
-                            <td class="px-3 py-2 whitespace-nowrap">{{ t.date }}</td>
-                            <td class="px-3 py-2 max-w-[40ch]">
+                            <td class="whitespace-nowrap px-3 py-2">{{ t.date }}</td>
+                            <td class="max-w-[40ch] px-3 py-2">
                                 <Tooltip>
                                     <TooltipTrigger as-child>
                                         <span class="block truncate">{{ t.description }}</span>
@@ -220,9 +237,9 @@ watch(currencyTab, (val) => {
                                     <TooltipContent>{{ t.description }}</TooltipContent>
                                 </Tooltip>
                             </td>
-                            <td class="px-3 py-2 whitespace-nowrap">{{ t.category }}</td>
+                            <td class="whitespace-nowrap px-3 py-2">{{ t.category }}</td>
                             <td
-                                class="px-3 py-2 whitespace-nowrap text-right"
+                                class="whitespace-nowrap px-3 py-2 text-right"
                                 :class="t.amount < 0 ? 'text-red-400' : 'text-emerald-400'"
                             >
                                 {{ money(t.amount, t.currency) }}
@@ -234,7 +251,7 @@ watch(currencyTab, (val) => {
             </Card>
 
             <!-- coach stub -->
-            <Card class="row-span-2">
+            <Card class="sm:col-span-2 md:col-span-1 md:row-span-2">
                 <CardHeader><CardTitle>AI Finance Coach</CardTitle></CardHeader>
                 <CardContent class="space-y-4">
                     <p class="rounded-lg bg-muted p-4">

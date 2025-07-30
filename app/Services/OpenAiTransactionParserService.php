@@ -88,7 +88,7 @@ class OpenAiTransactionParserService
         $prompt = str_replace('{{PDF_CONTENT}}', $pdfText, self::PROMPT_TEMPLATE);
 
         $response = OpenAI::chat()->create([
-            'model'       => 'claude-3-5-haiku',
+            'model'       => 'qwen/qwen3-235b-a22b-2507:free',
             'temperature' => 0,
             'max_tokens'  => 7000,
             'messages'    => [

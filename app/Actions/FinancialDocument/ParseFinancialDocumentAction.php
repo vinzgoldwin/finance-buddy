@@ -6,6 +6,8 @@ use App\Models\Transaction;
 use App\Models\Category;
 use App\Services\OpenAiTransactionParserService;
 use App\Services\PdfToTextService;
+use App\Services\CsvToTextService;
+use App\Services\ExcelToTextService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 
@@ -13,6 +15,8 @@ class ParseFinancialDocumentAction
 {
     public function __construct(
         protected PdfToTextService               $pdf,
+        protected CsvToTextService               $csv,
+        protected ExcelToTextService             $excel,
         protected OpenAiTransactionParserService $ai,
     ) {}
 
@@ -23,7 +27,14 @@ class ParseFinancialDocumentAction
      */
     public function execute(UploadedFile $file): Collection
     {
-        $rawText = $this->pdf->extract($file->getPathname());
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        $rawText = match ($extension) {
+            'pdf' => $this->pdf->extract($file->getPathname()),
+            'csv' => $this->csv->extract($file->getPathname()),
+            'xls', 'xlsx' => $this->excel->extract($file->getPathname()),
+            default => throw new \InvalidArgumentException("Unsupported file type: {$extension}"),
+        };
 
         $rows = $this->ai->parse($rawText);
 

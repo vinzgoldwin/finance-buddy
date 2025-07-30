@@ -12,7 +12,7 @@ use Inertia\Response;
 class FileController extends Controller
 {
     /**
-     * Show the “upload statement” page.
+     * Show the "upload statement" page.
      */
     public function create(): Response
     {
@@ -20,15 +20,26 @@ class FileController extends Controller
     }
 
     /**
-     * Handle an uploaded PDF, send it to OpenAI, and (later) persist transactions.
+     * Handle an uploaded file (PDF, CSV, Excel), send it to OpenAI, and persist transactions.
      */
     public function store(Request $request, ParseFinancialDocumentAction $parseDoc): RedirectResponse
     {
         set_time_limit(150);
 
         $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf', 'max:5120', new PdfMaxPages(10)],
+            'file' => [
+                'required',
+                'file',
+                'mimes:pdf,csv,xls,xlsx',
+                'max:5120'
+            ],
         ]);
+
+        if ($request->file('file')->getClientOriginalExtension() === 'pdf') {
+            $request->validate([
+                'file' => [new PdfMaxPages(10)],
+            ]);
+        }
 
         $file = $validated['file'];
         $importedTransaction = $parseDoc->execute($file);

@@ -24,7 +24,7 @@ class FileController extends Controller
      */
     public function store(Request $request, ParseFinancialDocumentAction $parseDoc): RedirectResponse
     {
-        set_time_limit(150);
+        set_time_limit(300);
 
         $validated = $request->validate([
             'file' => [

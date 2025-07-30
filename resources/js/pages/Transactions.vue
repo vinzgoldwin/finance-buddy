@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 // Remove pagination import for now
 
 // Icons
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Calendar, DollarSign, FileText } from 'lucide-vue-next'
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Calendar, FileText } from 'lucide-vue-next'
 
 // Types
 interface Transaction {
@@ -355,7 +355,7 @@ watch([currentYear, currentMonth], applyFilters)
 
                     <!-- Empty state -->
                     <div v-if="filteredTransactions.length === 0" class="py-16 text-center">
-                        <DollarSign class="mx-auto h-12 w-12 text-muted-foreground/50" />
+                        <FileText class="mx-auto h-12 w-12 text-muted-foreground/50" />
                         <h3 class="mt-4 text-lg font-medium">No transactions found</h3>
                         <p class="mt-2 text-sm text-muted-foreground">
                             Get started by adding your first transaction.

@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->string('merchant_key', 60)
+                ->after('description')
+                ->nullable()
+                ->index();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->dropIndex(['merchant_key']);
+            $table->dropColumn('merchant_key');
+        });
+    }
+};

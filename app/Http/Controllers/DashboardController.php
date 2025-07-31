@@ -22,13 +22,17 @@ class DashboardController extends Controller
         }
 
         $monthStr  = $request->query('date', now()->format('Y-m'));
-        $monthOptions = collect(range(0, 5))->map(function ($i) {
-            $date = now()->subMonths($i);
-            return [
-                'value' => $date->format('Y-m'),
-                'label' => $date->translatedFormat('F Y'),
-            ];
-        });
+        $base = now()->copy()->startOfMonth();
+
+        $monthOptions = collect(range(0, 5))
+            ->map(function ($i) use ($base) {
+                $d = $base->copy()->subMonths($i);
+                return [
+                    'value' => $d->format('Y-m'),
+                    'label' => $d->translatedFormat('F Y'),
+                ];
+            });
+
         [$y, $m]   = array_pad(explode('-', $monthStr), 2, null);
         $startDate = Carbon::createSafe((int) $y,(int) $m, 1)->startOfMonth();
         $endDate   = $startDate->copy()->endOfMonth();
@@ -127,6 +131,7 @@ class DashboardController extends Controller
         // 3.  Spending categories donut (skip income category)
         // ------------------------------------------------------------------
         $categories = Transaction::with('category')
+            ->whereBetween('date', [$startDate, $endDate])
             ->where('category_id', '!=', $incomeCategoryId)
             ->selectRaw('category_id, SUM(amount) as total')
             ->groupBy('category_id')

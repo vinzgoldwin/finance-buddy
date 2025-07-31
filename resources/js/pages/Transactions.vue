@@ -52,19 +52,20 @@ interface PaginatedTransactions {
 const props = defineProps<{
     transactions: PaginatedTransactions
     categories: Category[]
-    filters: {
-        year: number
-        month: number | null
-    }
+    date?: string
+    monthOptions: Array<{ value:string; label:string }>
 }>()
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Transactions', href: '/transactions' },
 ]
 
-// Filters
-const currentYear = ref(props.filters.year)
-const currentMonth = ref(props.filters.month)
+const today = new Date()
+
+const currentMonth = ref(
+    props.date ?? props.monthOptions[0]?.value ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`,
+)
+
 const searchQuery = ref('')
 
 // Modals
@@ -89,27 +90,7 @@ const editForm = useForm({
     category_id: '',
 })
 
-// Computed
-const yearOptions = computed(() => {
-    const currentYearNum = new Date().getFullYear()
-    return Array.from({ length: 5 }, (_, i) => currentYearNum - i)
-})
-
-const monthOptions = [
-    { value: null, label: 'All Months' },
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-]
+const monthOptions = props.monthOptions
 
 const filteredTransactions = computed(() => {
     if (!searchQuery.value) return props.transactions.data
@@ -203,8 +184,7 @@ const deleteTransaction = (transaction: Transaction) => {
 
 const applyFilters = () => {
     router.get(route('transactions.index'), {
-        year: currentYear.value,
-        month: currentMonth.value,
+        date: currentMonth.value,
     }, {
         preserveState: true,
         replace: true,
@@ -212,7 +192,7 @@ const applyFilters = () => {
 }
 
 // Watchers
-watch([currentYear, currentMonth], applyFilters)
+watch([currentMonth], applyFilters)
 </script>
 
 <template>
@@ -250,27 +230,18 @@ watch([currentYear, currentMonth], applyFilters)
                             class="pl-10"
                         />
                     </div>
-
-                    <!-- Year Filter -->
-                    <Select v-model="currentYear">
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-for="year in yearOptions" :key="year" :value="year.toString()">
-                                {{ year }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-
                     <!-- Month Filter -->
                     <Select v-model="currentMonth">
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select month" />
+                        <SelectTrigger class="w-[140px]">
+                            <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem v-for="month in monthOptions" :key="month.value" :value="month.value?.toString() || null">
-                                {{ month.label }}
+                            <SelectItem
+                                v-for="opt in monthOptions"
+                                :key="opt.value"
+                                :value="opt.value"
+                            >
+                                {{ opt.label }}
                             </SelectItem>
                         </SelectContent>
                     </Select>

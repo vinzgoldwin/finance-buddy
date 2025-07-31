@@ -10,6 +10,7 @@ use App\Services\CsvToTextService;
 use App\Services\ExcelToTextService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Str;
 
 class ParseFinancialDocumentAction
 {
@@ -44,11 +45,25 @@ class ParseFinancialDocumentAction
             return Transaction::create([
                 'date'        => $row['date']        ?? null,
                 'description' => $row['description'] ?? 'Unknown',
+                'merchant_key' => $this->merchantKey($row['description'] ?? null),
                 'amount'      => $row['amount']      ?? 0,
                 'currency'    => $row['currency']    ?? 'Unknown',
                 'category_id' => $categoryId,
                 'user_id'     => auth()->id(),
             ]);
         });
+    }
+
+    private function merchantKey(?string $description): ?string
+    {
+        if (!$description) {
+            return null;
+        }
+
+        $clean = strtolower($description);
+
+        $clean = preg_replace('/[0-9•+*\-\\s]+/', '', $clean);
+
+        return Str::limit(trim($clean), 60, '');
     }
 }

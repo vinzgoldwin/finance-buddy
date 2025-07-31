@@ -41,7 +41,7 @@ const props = defineProps<{
     barData: Array<{ name:string; income:number; expenses:number }>
 }>()
 
-const email = 'test'.endsWith()
+
 /* ───────────── helpers ───────────── */
 const money = (v:number, curr = props.currency) =>
     new Intl.NumberFormat(curr === 'IDR' ? 'id-ID' : 'en-US',
@@ -135,7 +135,6 @@ watch(currencyTab, (val) => {
         </div>
 
         <!-- ── dashboard grid ──────────────────────────────────────── -->
-        <!-- now single‑column on mobile -->
         <section class="grid grid-cols-1 gap-6 px-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
 
             <!-- metrics -->

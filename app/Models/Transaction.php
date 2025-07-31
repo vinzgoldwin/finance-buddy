@@ -12,6 +12,7 @@ class Transaction extends Model
         'user_id',
         'date',
         'description',
+        'merchant_key',
         'amount',
         'currency',
         'category_id',

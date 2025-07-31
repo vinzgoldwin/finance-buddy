@@ -15,17 +15,24 @@ class TransactionController extends Controller
 {
     public function index(Request $request): Response
     {
-        $year = $request->query('year', Carbon::now()->year);
-        $month = $request->query('month');
+        $monthStr  = $request->query('date', now()->format('Y-m'));
 
-        $query = Transaction::with('category')
-            ->whereYear('date', $year);
+        $monthOptions = collect(range(0, 5))->map(function ($i) {
+            $date = now()->subMonths($i);
+            return [
+                'value' => $date->format('Y-m'),
+                'label' => $date->translatedFormat('F Y'),
+            ];
+        });
 
-        if ($month) {
-            $query->whereMonth('date', $month);
-        }
 
-        $transactions = $query->orderBy('date', 'desc')
+        [$y, $m] = array_pad(explode('-', $monthStr), 2, null);
+        $startDate = Carbon::createSafe((int) $y, (int) $m, 1)->startOfMonth();
+        $endDate   = $startDate->copy()->endOfMonth();
+
+        $transactions = Transaction::with('category')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->orderBy('date', 'desc')
             ->paginate(20)
             ->withQueryString();
 
@@ -33,11 +40,9 @@ class TransactionController extends Controller
 
         return Inertia::render('Transactions', [
             'transactions' => $transactions,
-            'categories' => $categories,
-            'filters' => [
-                'year' => (int) $year,
-                'month' => $month ? (int) $month : null,
-            ],
+            'categories'   => $categories,
+            'date'         => $monthStr,
+            'monthOptions' => $monthOptions,
         ]);
     }
 

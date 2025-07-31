@@ -8,6 +8,7 @@ use App\Services\OpenAiTransactionParserService;
 use App\Services\PdfToTextService;
 use App\Services\CsvToTextService;
 use App\Services\ExcelToTextService;
+use App\Services\TransactionAnalyticsService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Str;
@@ -19,6 +20,7 @@ class ParseFinancialDocumentAction
         protected CsvToTextService               $csv,
         protected ExcelToTextService             $excel,
         protected OpenAiTransactionParserService $ai,
+        protected TransactionAnalyticsService    $analytics,
     ) {}
 
     /**
@@ -42,7 +44,7 @@ class ParseFinancialDocumentAction
         return collect($rows)->map(function (array $row) {
             $categoryId = Category::where('name', $row['category'] ?? 'Other')->value('id');
 
-            return Transaction::create([
+            $tx = Transaction::create([
                 'date'        => $row['date']        ?? null,
                 'description' => $row['description'] ?? 'Unknown',
                 'merchant_key' => $this->merchantKey($row['description'] ?? null),
@@ -51,8 +53,13 @@ class ParseFinancialDocumentAction
                 'category_id' => $categoryId,
                 'user_id'     => auth()->id(),
             ]);
+
+            $this->analytics->handle($tx);
+
+            return $tx;
         });
     }
+
 
     private function merchantKey(?string $description): ?string
     {
@@ -60,10 +67,24 @@ class ParseFinancialDocumentAction
             return null;
         }
 
-        $clean = strtolower($description);
+        $txt = strtolower($description);
 
-        $clean = preg_replace('/[0-9•+*\-\\s]+/', '', $clean);
+        /* --------------------------------------------------------------
+         * 1. Throw away everything after the first *, /, or whitespace.
+         * -------------------------------------------------------------- */
+        $txt = preg_split('/[\*\/\s]+/', $txt, 2)[0] ?? $txt;
 
-        return Str::limit(trim($clean), 60, '');
+        /* --------------------------------------------------------------
+         * 2. Strip anything that isn’t a-z.
+         * -------------------------------------------------------------- */
+        $txt = preg_replace('/[^a-z]/', '', $txt);
+
+        /* --------------------------------------------------------------
+         * 3. Collapse generic gateways (optional but recommended).
+         * -------------------------------------------------------------- */
+        $gateways = ['doku', 'qris', 'visa', 'mastercard', 'gopay', 'ovo'];
+        $txt      = Str::of($txt)->replace($gateways, '')->value();
+
+        return Str::limit($txt, 40, '');
     }
 }

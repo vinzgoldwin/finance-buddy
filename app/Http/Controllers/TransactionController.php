@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Services\TransactionAnalyticsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,14 +18,16 @@ class TransactionController extends Controller
     {
         $monthStr  = $request->query('date', now()->format('Y-m'));
 
-        $monthOptions = collect(range(0, 5))->map(function ($i) {
-            $date = now()->subMonths($i);
-            return [
-                'value' => $date->format('Y-m'),
-                'label' => $date->translatedFormat('F Y'),
-            ];
-        });
+        $base = now()->copy()->startOfMonth();
 
+        $monthOptions = collect(range(0, 5))
+            ->map(function ($i) use ($base) {
+                $d = $base->copy()->subMonths($i);
+                return [
+                    'value' => $d->format('Y-m'),
+                    'label' => $d->translatedFormat('F Y'),
+                ];
+            });
 
         [$y, $m] = array_pad(explode('-', $monthStr), 2, null);
         $startDate = Carbon::createSafe((int) $y, (int) $m, 1)->startOfMonth();
@@ -58,7 +61,9 @@ class TransactionController extends Controller
 
         $validated['user_id'] = auth()->id();
 
-        Transaction::create($validated);
+        $tx = Transaction::create($validated);
+
+        app(TransactionAnalyticsService::class)->handle($tx);
 
         return back()->with('status', 'Transaction created successfully.');
     }
@@ -74,6 +79,10 @@ class TransactionController extends Controller
         ]);
 
         $transaction->update($validated);
+
+        $transaction->refresh();
+
+        app(TransactionAnalyticsService::class)->handle($transaction);
 
         return back()->with('status', 'Transaction updated successfully.');
     }

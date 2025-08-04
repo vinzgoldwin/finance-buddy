@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\SpendingLimitController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\FileController;
@@ -20,6 +21,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('files/upload', [FileController::class, 'create'])->name('files.create');
     Route::post('files/upload', [FileController::class, 'store'])->name('files.store');
+    
+    // Spending limit routes
+    Route::get('spending-limit', [SpendingLimitController::class, 'show'])->name('spending-limit.show');
+    Route::post('spending-limit', [SpendingLimitController::class, 'store'])->name('spending-limit.store');
 });
 
 require __DIR__.'/settings.php';

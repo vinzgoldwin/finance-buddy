@@ -38,9 +38,11 @@ class DashboardController extends Controller
         $startDate = Carbon::createSafe((int) $y,(int) $m, 1)->startOfMonth();
         $endDate   = $startDate->copy()->endOfMonth();
 
-        $periodStart = $startDate->copy()->subMonths(5)->startOfMonth();
+        // For bar chart, always show last 6 months regardless of selected month
+        $barChartEnd = now()->copy()->endOfMonth();
+        $barChartStart = $barChartEnd->copy()->subMonths(5)->startOfMonth();
 
-        $barRaw = Transaction::whereBetween('date', [$periodStart, $endDate])
+        $barRaw = Transaction::whereBetween('date', [$barChartStart, $barChartEnd])
             ->selectRaw(
                 'YEAR(date)  as yr,
                  MONTH(date) as mo,
@@ -54,8 +56,8 @@ class DashboardController extends Controller
             ->get();
 
         $barData = collect(range(0,5))
-            ->map(function ($offset) use ($periodStart, $barRaw, $currency, $incomeCategoryId) {
-                $month = $periodStart->copy()->addMonths($offset);
+            ->map(function ($offset) use ($barChartStart, $barRaw, $currency, $incomeCategoryId) {
+                $month = $barChartStart->copy()->addMonths($offset);
                 $rows  = $barRaw->where('yr', $month->year)->where('mo', $month->month);
 
                 $usdInc = (float) $rows->where('currency','USD')->sum('income');
@@ -171,7 +173,44 @@ class DashboardController extends Controller
             ]);
 
         // ------------------------------------------------------------------
-        // 5.  Return to Inertia
+        // 5.  Spending limit data
+        // ------------------------------------------------------------------
+        $spendingLimit = auth()->user()->spendingLimits()->first();
+        $spendingLimitData = $spendingLimit ? [
+            'amount' => $spendingLimit->amount,
+            'interval' => $spendingLimit->interval,
+        ] : [
+            'amount' => 0,
+            'interval' => 'monthly',
+        ];
+
+        // Calculate spent amount based on interval
+        $now = now();
+        $spentAmount = 0;
+        
+        switch ($spendingLimitData['interval']) {
+            case 'daily':
+                $startDate = $now->copy()->startOfDay();
+                $endDate = $now->copy()->endOfDay();
+                break;
+            case 'weekly':
+                $startDate = $now->copy()->startOfWeek();
+                $endDate = $now->copy()->endOfWeek();
+                break;
+            case 'monthly':
+            default:
+                $startDate = $now->copy()->startOfMonth();
+                $endDate = $now->copy()->endOfMonth();
+                break;
+        }
+        
+        // Get expenses (excluding income and savings categories)
+        $spentAmount = Transaction::whereBetween('date', [$startDate, $endDate])
+            ->whereNotIn('category_id', [$incomeCategoryId, $savingsCategoryId])
+            ->sum('amount');
+
+        // ------------------------------------------------------------------
+        // 6.  Return to Inertia
         // ------------------------------------------------------------------
         return Inertia::render('Dashboard', [
             'currency'     => $currency,
@@ -187,6 +226,7 @@ class DashboardController extends Controller
             'categories'  => $categories,
             'recent'      => $recent,
             'barData'     => $barData,
+            'spendingLimit' => array_merge($spendingLimitData, ['spent' => (float) $spentAmount]),
         ]);
     }
 }

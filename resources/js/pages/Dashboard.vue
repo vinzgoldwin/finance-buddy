@@ -13,6 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+/* Custom components */
+import SpendingLimitCard from '@/components/SpendingLimitCard.vue';
+
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Legend);
 
 /* ───────────── Inertia props ───────────── */
@@ -38,6 +41,11 @@ const props = defineProps<{
     date?: string;
     monthOptions: Array<{ value: string; label: string }>;
     barData: Array<{ name: string; income: number; expenses: number; savings: number }>;
+    spendingLimit: {
+        amount: number;
+        interval: string;
+        spent: number;
+    };
 }>();
 
 /* ───────────── helpers ───────────── */
@@ -88,6 +96,13 @@ const currentMonth = ref(props.date ?? monthOptions[0]?.value ?? `${today.getFul
 /* ───────────── currency tabs state ───────────── */
 const currencyTab = ref<'USD' | 'IDR'>(props.currency);
 
+/* ───────────── spending limit state ───────────── */
+const spendingLimit = ref(props.spendingLimit);
+
+const updateSpendingLimit = (newLimit: { amount: number; interval: string; spent: number }) => {
+    spendingLimit.value = newLimit;
+};
+
 /*  react to changes  */
 watch(currentMonth, (val) => {
     router.get('/dashboard', { currency: currencyTab.value, date: val }, { preserveState: true, replace: true });
@@ -123,28 +138,38 @@ watch(currencyTab, (val) => {
         </div>
 
         <!-- ── dashboard grid ──────────────────────────────────────── -->
-        <section class="grid grid-cols-1 gap-6 px-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        <section class="grid grid-cols-1 gap-6 px-3 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5">
             <!-- metrics -->
-            <Card>
+            <Card class="md:col-span-1">
                 <CardHeader>
                     <CardDescription>Total Income</CardDescription>
-                    <CardTitle class="text-2xl">{{ money(metrics.income) }}</CardTitle>
+                    <CardTitle class="text-lg mt-2">{{ money(metrics.income) }}</CardTitle>
                 </CardHeader>
             </Card>
 
-            <Card>
+            <Card class="md:col-span-1">
                 <CardHeader>
                     <CardDescription>Total Expenses</CardDescription>
-                    <CardTitle class="text-2xl">{{ money(metrics.expenses) }}</CardTitle>
+                    <CardTitle class="text-lg mt-2">{{ money(metrics.expenses) }}</CardTitle>
                 </CardHeader>
             </Card>
 
-            <Card>
+            <Card class="md:col-span-1">
                 <CardHeader>
-                    <CardDescription>Savings &amp; Investing</CardDescription>
-                    <CardTitle class="text-2xl">{{ money(metrics.savings) }}</CardTitle>
+                    <CardDescription>Savings & Investing</CardDescription>
+                    <CardTitle class="text-lg mt-2">{{ money(metrics.savings) }}</CardTitle>
                 </CardHeader>
             </Card>
+
+            <!-- Spending Limit Card -->
+            <div class="md:col-span-2">
+                <SpendingLimitCard
+                    :spending-limit="spendingLimit"
+                    :currency="currencyTab"
+                    class="sm:col-span-2 md:col-span-4 xl:col-span-5"
+                    @update:spendingLimit="updateSpendingLimit"
+                />
+            </div>
 
             <!-- donut -->
             <Card class="sm:col-span-2 md:col-span-1 md:row-span-2">
@@ -173,7 +198,7 @@ watch(currencyTab, (val) => {
 
             <!-- Bar Chart -->
             <Card class="sm:col-span-2 xl:col-span-3">
-                <CardHeader><CardTitle>6‑Month Income vs Expenses</CardTitle></CardHeader>
+                <CardHeader><CardTitle>6‑Month Income, Savings & Expenses</CardTitle></CardHeader>
                 <CardContent class="h-48 sm:h-60">
                     <BarChart
                         class="h-full"

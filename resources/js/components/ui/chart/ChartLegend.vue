@@ -22,7 +22,12 @@ function keepStyling() {
     const elements = elRef.value?.querySelectorAll(selector)
     const classes = buttonVariants({ variant: 'ghost', size: 'xs' }).split(' ')
 
-    elements?.forEach(el => el.classList.add(...classes, '!inline-flex', '!mr-2'))
+    elements?.forEach(el => {
+      // Add classes but remove left margin
+      el.classList.add(...classes, '!inline-flex', '!mr-2')
+      // Remove any left margin that might be applied
+      el.classList.remove('ml-2')
+    })
   })
 }
 

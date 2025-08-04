@@ -12,7 +12,7 @@ import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutGrid, Menu, Search, FileText, Bot, UploadCloud } from 'lucide-vue-next';
+import { Bot, FileText, LayoutGrid, Menu, Search, UploadCloud } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {

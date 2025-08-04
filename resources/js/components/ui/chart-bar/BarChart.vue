@@ -43,11 +43,25 @@ type Data = typeof props.data[number]
 
 const index = computed(() => props.index as KeyOfT)
 const colors = computed(() => props.colors?.length ? props.colors : defaultColors(props.categories.length))
-const legendItems = ref<BulletLegendItemInterface[]>(props.categories.map((category, i) => ({
-  name: category,
-  color: colors.value[i],
-  inactive: false,
-})))
+const legendItems = ref<BulletLegendItemInterface[]>(() => {
+  // Create items in the order they appear in categories
+  const items = props.categories.map((category, i) => ({
+    name: category,
+    color: colors.value[i],
+    inactive: false,
+  }))
+  
+  // Reorder for legend display: Income, Savings, Expenses
+  const order = ['income', 'savings', 'expenses']
+  items.sort((a, b) => {
+    const indexA = order.indexOf(a.name)
+    const indexB = order.indexOf(b.name)
+    // If item is not in our order array, put it at the end
+    return (indexA === -1 ? Infinity : indexA) - (indexB === -1 ? Infinity : indexB)
+  })
+  
+  return items
+})
 
 const isMounted = useMounted()
 

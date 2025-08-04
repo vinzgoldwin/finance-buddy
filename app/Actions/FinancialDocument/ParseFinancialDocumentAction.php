@@ -60,7 +60,6 @@ class ParseFinancialDocumentAction
         });
     }
 
-
     private function merchantKey(?string $description): ?string
     {
         if (!$description) {
@@ -69,22 +68,23 @@ class ParseFinancialDocumentAction
 
         $txt = strtolower($description);
 
-        /* --------------------------------------------------------------
-         * 1. Throw away everything after the first *, /, or whitespace.
-         * -------------------------------------------------------------- */
-        $txt = preg_split('/[\*\/\s]+/', $txt, 2)[0] ?? $txt;
+        // 1. Kill generic gateways up-front.
+        foreach (['doku', 'qris', 'visa', 'mastercard', 'gopay', 'ovo'] as $gw) {
+            $txt = str_replace($gw, '', $txt);
+        }
 
-        /* --------------------------------------------------------------
-         * 2. Strip anything that isn’t a-z.
-         * -------------------------------------------------------------- */
-        $txt = preg_replace('/[^a-z]/', '', $txt);
+        // 2. Chop off any leading separators left behind.
+        $txt = ltrim($txt, "*/ \t\n\r\0\x0B");
 
-        /* --------------------------------------------------------------
-         * 3. Collapse generic gateways (optional but recommended).
-         * -------------------------------------------------------------- */
-        $gateways = ['doku', 'qris', 'visa', 'mastercard', 'gopay', 'ovo'];
-        $txt      = Str::of($txt)->replace($gateways, '')->value();
+        // 3. Split on *, /, or whitespace and pick the first non-empty piece.
+        foreach (preg_split('/[\*\/\s]+/', $txt) as $part) {
+            $part = preg_replace('/[^a-z]/', '', $part);   // keep letters only
+            if ($part !== '') {
+                return Str::limit($part, 40, '');
+            }
+        }
 
-        return Str::limit($txt, 40, '');
+        return null; // nothing usable
     }
+
 }

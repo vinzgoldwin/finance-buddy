@@ -20,6 +20,7 @@ interface Metrics {
     income: number;
     expenses: number;
     netPct: number;
+    savings: number;
 }
 const props = defineProps<{
     metrics: Metrics;
@@ -36,7 +37,7 @@ const props = defineProps<{
     currency: 'USD' | 'IDR';
     date?: string;
     monthOptions: Array<{ value: string; label: string }>;
-    barData: Array<{ name: string; income: number; expenses: number }>;
+    barData: Array<{ name: string; income: number; expenses: number; savings: number }>;
 }>();
 
 /* ───────────── helpers ───────────── */
@@ -63,8 +64,8 @@ const COLOR_BY_CATEGORY: Record<string, string> = {
 };
 
 const donutData = computed(() => {
-    const labels = props.categories.map((c) => c.label);
-    const data = props.categories.map((c) => c.value);
+    const labels = props.categories.map((c) => c.label).filter((l) => l !== 'Savings & Investing');
+    const data   = props.categories.filter((c) => c.label !== 'Savings & Investing').map((c) => c.value);
     const bg = labels.map((l) => COLOR_BY_CATEGORY[l] ?? '#d1d5db');
     return { labels, datasets: [{ data, backgroundColor: bg, hoverBackgroundColor: bg, borderWidth: 0 }] };
 });
@@ -138,11 +139,10 @@ watch(currencyTab, (val) => {
                 </CardHeader>
             </Card>
 
-            <!-- wrap correctly on all widths -->
-            <Card class="sm:col-span-2 md:col-span-1">
+            <Card>
                 <CardHeader>
-                    <CardDescription>Net Balance</CardDescription>
-                    <CardTitle class="text-3xl text-emerald-400"> {{ metrics.netPct }}% </CardTitle>
+                    <CardDescription>Savings &amp; Investing</CardDescription>
+                    <CardTitle class="text-2xl">{{ money(metrics.savings) }}</CardTitle>
                 </CardHeader>
             </Card>
 
@@ -179,7 +179,8 @@ watch(currencyTab, (val) => {
                         class="h-full"
                         :data="barData"
                         index="name"
-                        :categories="['income', 'expenses']"
+                        :categories="['income', 'savings', 'expenses']"
+                        :colors="['#0ea5e9','#10b981','#ef4444']"
                         :y-formatter="(tick) => (typeof tick === 'number' ? moneyShort(tick, currencyTab) : '')"
                     />
                 </CardContent>

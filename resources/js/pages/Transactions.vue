@@ -1,77 +1,73 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { Head, router, useForm } from '@inertiajs/vue3'
-import AppLayout from '@/layouts/AppLayout.vue'
-import type { BreadcrumbItem } from '@/types'
+import AppLayout from '@/layouts/AppLayout.vue';
+import type { BreadcrumbItem } from '@/types';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 
 // UI Components
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 // Remove pagination import for now
 
 // Icons
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Calendar, FileText } from 'lucide-vue-next'
+import { Calendar, Edit, FileText, MoreHorizontal, Plus, Search, Trash2 } from 'lucide-vue-next';
 
 // Types
 interface Transaction {
-    id: number
-    date: string
-    description: string
-    amount: number
-    currency: 'USD' | 'IDR'
+    id: number;
+    date: string;
+    description: string;
+    amount: number;
+    currency: 'USD' | 'IDR';
     category: {
-        id: number
-        name: string
-    }
+        id: number;
+        name: string;
+    };
 }
 
 interface Category {
-    id: number
-    name: string
+    id: number;
+    name: string;
 }
 
 interface PaginatedTransactions {
-    data: Transaction[]
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
+    data: Transaction[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
     links: Array<{
-        url: string | null
-        label: string
-        active: boolean
-    }>
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
 }
 
 const props = defineProps<{
-    transactions: PaginatedTransactions
-    categories: Category[]
-    date?: string
-    monthOptions: Array<{ value:string; label:string }>
-}>()
+    transactions: PaginatedTransactions;
+    categories: Category[];
+    date?: string;
+    monthOptions: Array<{ value: string; label: string }>;
+}>();
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Transactions', href: '/transactions' },
-]
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Transactions', href: '/transactions' }];
 
-const today = new Date()
+const today = new Date();
 
-const currentMonth = ref(
-    props.date ?? props.monthOptions[0]?.value ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`,
-)
+const currentMonth = ref(props.date ?? props.monthOptions[0]?.value ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`);
 
-const searchQuery = ref('')
+const searchQuery = ref('');
 
 // Modals
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const editingTransaction = ref<Transaction | null>(null)
+const showCreateModal = ref(false);
+const showEditModal = ref(false);
+const editingTransaction = ref<Transaction | null>(null);
 
 // Forms
 const createForm = useForm({
@@ -80,7 +76,7 @@ const createForm = useForm({
     amount: 0,
     currency: 'USD' as 'USD' | 'IDR',
     category_id: '',
-})
+});
 
 const editForm = useForm({
     date: '',
@@ -88,38 +84,39 @@ const editForm = useForm({
     amount: 0,
     currency: 'USD' as 'USD' | 'IDR',
     category_id: '',
-})
+});
 
-const monthOptions = props.monthOptions
+const monthOptions = props.monthOptions;
 
 const filteredTransactions = computed(() => {
-    if (!searchQuery.value) return props.transactions.data
+    if (!searchQuery.value) return props.transactions.data;
 
-    return props.transactions.data.filter(transaction =>
-        transaction.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        transaction.category.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-})
+    return props.transactions.data.filter(
+        (transaction) =>
+            transaction.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            transaction.category.name.toLowerCase().includes(searchQuery.value.toLowerCase()),
+    );
+});
 
 // Helper functions
 const formatMoney = (amount: number, currency: string) => {
     return new Intl.NumberFormat(currency === 'IDR' ? 'id-ID' : 'en-US', {
         style: 'currency',
-        currency: currency
-    }).format(Math.abs(amount))
-}
+        currency: currency,
+    }).format(Math.abs(amount));
+};
 
 const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
-    })
-}
+        day: 'numeric',
+    });
+};
 
 const formatDateForInput = (dateString: string) => {
-    return new Date(dateString).toISOString().split('T')[0]
-}
+    return new Date(dateString).toISOString().split('T')[0];
+};
 
 const getCategoryColor = (categoryName: string) => {
     const colors: Record<string, string> = {
@@ -129,70 +126,74 @@ const getCategoryColor = (categoryName: string) => {
         'Health & Insurance': 'bg-red-100 text-red-800',
         'Shopping & Lifestyle': 'bg-purple-100 text-purple-800',
         'Savings & Investing': 'bg-green-100 text-green-800',
-        'Income': 'bg-emerald-100 text-emerald-800',
-    }
-    return colors[categoryName] || 'bg-slate-100 text-slate-800'
-}
+        Income: 'bg-emerald-100 text-emerald-800',
+    };
+    return colors[categoryName] || 'bg-slate-100 text-slate-800';
+};
 
 const isIncome = (transaction: Transaction) => {
-    return transaction.category.name === 'Income'
-}
+    return transaction.category.name === 'Income';
+};
 
 // Actions
 const openCreateModal = () => {
-    createForm.reset()
-    createForm.date = new Date().toISOString().split('T')[0]
-    showCreateModal.value = true
-}
+    createForm.reset();
+    createForm.date = new Date().toISOString().split('T')[0];
+    showCreateModal.value = true;
+};
 
 const openEditModal = (transaction: Transaction) => {
-    editingTransaction.value = transaction
-    editForm.date = formatDateForInput(transaction.date)
-    editForm.description = transaction.description
-    editForm.amount = Math.abs(transaction.amount)
-    editForm.currency = transaction.currency
-    editForm.category_id = transaction.category.id.toString()
-    showEditModal.value = true
-}
+    editingTransaction.value = transaction;
+    editForm.date = formatDateForInput(transaction.date);
+    editForm.description = transaction.description;
+    editForm.amount = Math.abs(transaction.amount);
+    editForm.currency = transaction.currency;
+    editForm.category_id = transaction.category.id.toString();
+    showEditModal.value = true;
+};
 
 const createTransaction = () => {
     createForm.post(route('transactions.store'), {
         onSuccess: () => {
-            showCreateModal.value = false
-            createForm.reset()
-        }
-    })
-}
+            showCreateModal.value = false;
+            createForm.reset();
+        },
+    });
+};
 
 const updateTransaction = () => {
-    if (!editingTransaction.value) return
+    if (!editingTransaction.value) return;
 
     editForm.put(route('transactions.update', editingTransaction.value.id), {
         onSuccess: () => {
-            showEditModal.value = false
-            editingTransaction.value = null
-            editForm.reset()
-        }
-    })
-}
+            showEditModal.value = false;
+            editingTransaction.value = null;
+            editForm.reset();
+        },
+    });
+};
 
 const deleteTransaction = (transaction: Transaction) => {
     if (confirm('Are you sure you want to delete this transaction?')) {
-        router.delete(route('transactions.destroy', transaction.id))
+        router.delete(route('transactions.destroy', transaction.id));
     }
-}
+};
 
 const applyFilters = () => {
-    router.get(route('transactions.index'), {
-        date: currentMonth.value,
-    }, {
-        preserveState: true,
-        replace: true,
-    })
-}
+    router.get(
+        route('transactions.index'),
+        {
+            date: currentMonth.value,
+        },
+        {
+            preserveState: true,
+            replace: true,
+        },
+    );
+};
 
 // Watchers
-watch([currentMonth], applyFilters)
+watch([currentMonth], applyFilters);
 </script>
 
 <template>
@@ -200,19 +201,17 @@ watch([currentMonth], applyFilters)
 
     <AppLayout :breadcrumbs="breadcrumbs" class="px-2">
         <!-- Header with controls -->
-        <div class="p-6 flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-4 p-6 px-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
                 <FileText class="h-8 w-8 text-primary" />
                 <div>
                     <h1 class="text-2xl font-bold">Transactions</h1>
-                    <p class="text-sm text-muted-foreground">
-                        Manage your financial transactions
-                    </p>
+                    <p class="text-sm text-muted-foreground">Manage your financial transactions</p>
                 </div>
             </div>
 
             <Button @click="openCreateModal" class="shrink-0">
-                <Plus class="h-4 w-4 mr-2" />
+                <Plus class="mr-2 h-4 w-4" />
                 Add Transaction
             </Button>
         </div>
@@ -223,12 +222,8 @@ watch([currentMonth], applyFilters)
                 <div class="grid gap-4 md:grid-cols-4">
                     <!-- Search -->
                     <div class="relative md:col-span-2">
-                        <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            v-model="searchQuery"
-                            placeholder="Search transactions..."
-                            class="pl-10"
-                        />
+                        <Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input v-model="searchQuery" placeholder="Search transactions..." class="pl-10" />
                     </div>
                     <!-- Month Filter -->
                     <Select v-model="currentMonth">
@@ -236,11 +231,7 @@ watch([currentMonth], applyFilters)
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem
-                                v-for="opt in monthOptions"
-                                :key="opt.value"
-                                :value="opt.value"
-                            >
+                            <SelectItem v-for="opt in monthOptions" :key="opt.value" :value="opt.value">
                                 {{ opt.label }}
                             </SelectItem>
                         </SelectContent>
@@ -252,9 +243,7 @@ watch([currentMonth], applyFilters)
         <!-- Transactions Table -->
         <Card class="mx-4 mb-6">
             <CardHeader>
-                <CardTitle>
-                    Transactions ({{ transactions.total }})
-                </CardTitle>
+                <CardTitle> Transactions ({{ transactions.total }}) </CardTitle>
             </CardHeader>
             <CardContent class="p-0">
                 <div class="overflow-x-auto">
@@ -272,7 +261,7 @@ watch([currentMonth], applyFilters)
                             <tr
                                 v-for="transaction in filteredTransactions"
                                 :key="transaction.id"
-                                class="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                                class="border-b border-border/50 transition-colors hover:bg-muted/30"
                             >
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex items-center gap-2">
@@ -291,10 +280,7 @@ watch([currentMonth], applyFilters)
                                     </Badge>
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <span
-                                        class="text-sm font-medium"
-                                        :class="isIncome(transaction) ? 'text-green-600' : 'text-red-600'"
-                                    >
+                                    <span class="text-sm font-medium" :class="isIncome(transaction) ? 'text-green-600' : 'text-red-600'">
                                         {{ isIncome(transaction) ? '+' : '-' }}{{ formatMoney(transaction.amount, transaction.currency) }}
                                     </span>
                                 </td>
@@ -307,14 +293,11 @@ watch([currentMonth], applyFilters)
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem @click="openEditModal(transaction)">
-                                                <Edit class="h-4 w-4 mr-2" />
+                                                <Edit class="mr-2 h-4 w-4" />
                                                 Edit
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                @click="deleteTransaction(transaction)"
-                                                class="text-red-600 focus:text-red-600"
-                                            >
-                                                <Trash2 class="h-4 w-4 mr-2" />
+                                            <DropdownMenuItem @click="deleteTransaction(transaction)" class="text-red-600 focus:text-red-600">
+                                                <Trash2 class="mr-2 h-4 w-4" />
                                                 Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -328,11 +311,9 @@ watch([currentMonth], applyFilters)
                     <div v-if="filteredTransactions.length === 0" class="py-16 text-center">
                         <FileText class="mx-auto h-12 w-12 text-muted-foreground/50" />
                         <h3 class="mt-4 text-lg font-medium">No transactions found</h3>
-                        <p class="mt-2 text-sm text-muted-foreground">
-                            Get started by adding your first transaction.
-                        </p>
+                        <p class="mt-2 text-sm text-muted-foreground">Get started by adding your first transaction.</p>
                         <Button @click="openCreateModal" class="mt-4">
-                            <Plus class="h-4 w-4 mr-2" />
+                            <Plus class="mr-2 h-4 w-4" />
                             Add Transaction
                         </Button>
                     </div>
@@ -343,7 +324,8 @@ watch([currentMonth], applyFilters)
         <!-- Simple Pagination -->
         <div v-if="transactions.last_page > 1" class="mx-4 mb-6 flex items-center justify-between">
             <div class="text-sm text-muted-foreground">
-                Showing {{ ((transactions.current_page - 1) * transactions.per_page) + 1 }} to {{ Math.min(transactions.current_page * transactions.per_page, transactions.total) }} of {{ transactions.total }} results
+                Showing {{ (transactions.current_page - 1) * transactions.per_page + 1 }} to
+                {{ Math.min(transactions.current_page * transactions.per_page, transactions.total) }} of {{ transactions.total }} results
             </div>
             <div class="flex gap-2">
                 <Button
@@ -354,7 +336,7 @@ watch([currentMonth], applyFilters)
                     size="sm"
                     @click="link.url && router.visit(link.url)"
                 >
-                    {{idx === 0 ? 'Previous' : idx === transactions.links.length - 1 ? 'Next' : link.label}}
+                    {{ idx === 0 ? 'Previous' : idx === transactions.links.length - 1 ? 'Next' : link.label }}
                 </Button>
             </div>
         </div>
@@ -370,12 +352,7 @@ watch([currentMonth], applyFilters)
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <Label for="create-date">Date</Label>
-                            <Input
-                                id="create-date"
-                                v-model="createForm.date"
-                                type="date"
-                                required
-                            />
+                            <Input id="create-date" v-model="createForm.date" type="date" required />
                         </div>
 
                         <div>
@@ -394,26 +371,13 @@ watch([currentMonth], applyFilters)
 
                     <div>
                         <Label for="create-description">Description</Label>
-                        <Input
-                            id="create-description"
-                            v-model="createForm.description"
-                            placeholder="Enter description"
-                            required
-                        />
+                        <Input id="create-description" v-model="createForm.description" placeholder="Enter description" required />
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <Label for="create-amount">Amount</Label>
-                            <Input
-                                id="create-amount"
-                                v-model="createForm.amount"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder="0.00"
-                                required
-                            />
+                            <Input id="create-amount" v-model="createForm.amount" type="number" step="0.01" min="0" placeholder="0.00" required />
                         </div>
 
                         <div>
@@ -423,11 +387,7 @@ watch([currentMonth], applyFilters)
                                     <SelectValue placeholder="Select category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem
-                                        v-for="category in categories"
-                                        :key="category.id"
-                                        :value="category.id.toString()"
-                                    >
+                                    <SelectItem v-for="category in categories" :key="category.id" :value="category.id.toString()">
                                         {{ category.name }}
                                     </SelectItem>
                                 </SelectContent>
@@ -439,13 +399,7 @@ watch([currentMonth], applyFilters)
                         <Button type="submit" :disabled="createForm.processing">
                             {{ createForm.processing ? 'Creating...' : 'Create Transaction' }}
                         </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            @click="showCreateModal = false"
-                        >
-                            Cancel
-                        </Button>
+                        <Button type="button" variant="outline" @click="showCreateModal = false"> Cancel </Button>
                     </div>
                 </form>
             </DialogContent>
@@ -462,12 +416,7 @@ watch([currentMonth], applyFilters)
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <Label for="edit-date">Date</Label>
-                            <Input
-                                id="edit-date"
-                                v-model="editForm.date"
-                                type="date"
-                                required
-                            />
+                            <Input id="edit-date" v-model="editForm.date" type="date" required />
                         </div>
 
                         <div>
@@ -486,26 +435,13 @@ watch([currentMonth], applyFilters)
 
                     <div>
                         <Label for="edit-description">Description</Label>
-                        <Input
-                            id="edit-description"
-                            v-model="editForm.description"
-                            placeholder="Enter description"
-                            required
-                        />
+                        <Input id="edit-description" v-model="editForm.description" placeholder="Enter description" required />
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <Label for="edit-amount">Amount</Label>
-                            <Input
-                                id="edit-amount"
-                                v-model="editForm.amount"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder="0.00"
-                                required
-                            />
+                            <Input id="edit-amount" v-model="editForm.amount" type="number" step="0.01" min="0" placeholder="0.00" required />
                         </div>
 
                         <div>
@@ -515,11 +451,7 @@ watch([currentMonth], applyFilters)
                                     <SelectValue placeholder="Select category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem
-                                        v-for="category in categories"
-                                        :key="category.id"
-                                        :value="category.id.toString()"
-                                    >
+                                    <SelectItem v-for="category in categories" :key="category.id" :value="category.id.toString()">
                                         {{ category.name }}
                                     </SelectItem>
                                 </SelectContent>
@@ -531,13 +463,7 @@ watch([currentMonth], applyFilters)
                         <Button type="submit" :disabled="editForm.processing">
                             {{ editForm.processing ? 'Updating...' : 'Update Transaction' }}
                         </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            @click="showEditModal = false"
-                        >
-                            Cancel
-                        </Button>
+                        <Button type="button" variant="outline" @click="showEditModal = false"> Cancel </Button>
                     </div>
                 </form>
             </DialogContent>

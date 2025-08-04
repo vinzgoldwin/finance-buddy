@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { useAppearance } from '@/composables/useAppearance';
 import type { HTMLAttributes } from 'vue';
 import { computed } from 'vue';
-import { useAppearance } from '@/composables/useAppearance';
 
-import lightLogo from '../../assets/images/finance_buddy_light.svg';
 import darkLogo from '../../assets/images/finance_buddy_dark.svg';
+import lightLogo from '../../assets/images/finance_buddy_light.svg';
 
 defineOptions({
     inheritAttrs: false,
@@ -32,7 +32,6 @@ const logo = computed(() => {
 
     return darkLogo;
 });
-
 </script>
 
 <template>

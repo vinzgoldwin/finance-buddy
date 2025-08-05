@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { toast } from '@/components/ui/toast/use-toast';
 
 // UI Components
 import { Badge } from '@/components/ui/badge';
@@ -162,7 +163,19 @@ const createTransaction = () => {
         onSuccess: () => {
             showCreateModal.value = false;
             createForm.reset();
+            toast({
+                title: "Transaction Created",
+                description: "Your transaction has been successfully created.",
+                variant: "success",
+            });
         },
+        onError: () => {
+            toast({
+                title: "Error Creating Transaction",
+                description: "There was an error creating your transaction. Please try again.",
+                variant: "destructive",
+            });
+        }
     });
 };
 
@@ -174,13 +187,40 @@ const updateTransaction = () => {
             showEditModal.value = false;
             editingTransaction.value = null;
             editForm.reset();
+            toast({
+                title: "Transaction Updated",
+                description: "Your transaction has been successfully updated.",
+                variant: "success",
+            });
         },
+        onError: () => {
+            toast({
+                title: "Error Updating Transaction",
+                description: "There was an error updating your transaction. Please try again.",
+                variant: "destructive",
+            });
+        }
     });
 };
 
 const deleteTransaction = (transaction: Transaction) => {
     if (confirm('Are you sure you want to delete this transaction?')) {
-        router.delete(route('transactions.destroy', transaction.id));
+        router.delete(route('transactions.destroy', transaction.id), {
+            onSuccess: () => {
+                toast({
+                    title: "Transaction Deleted",
+                    description: "Your transaction has been successfully deleted.",
+                    variant: "success",
+                });
+            },
+            onError: () => {
+                toast({
+                    title: "Error Deleting Transaction",
+                    description: "There was an error deleting your transaction. Please try again.",
+                    variant: "destructive",
+                });
+            }
+        });
     }
 };
 

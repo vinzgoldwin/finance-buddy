@@ -106,6 +106,7 @@ const updateSpendingLimit = (newLimit: { amount: number; interval: string; spent
     toast({
         title: "Spending Limit Updated",
         description: "Your spending limit has been successfully updated.",
+        variant: "success",
     });
 };
 

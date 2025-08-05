@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { onUnmounted, ref, watch } from 'vue';
+import { toast } from '@/components/ui/toast/use-toast';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -113,7 +114,21 @@ const submit = () => {
         onSuccess: () => {
             stopProgressAnimation();
             currentProcessingState.value = 'completed';
+            toast({
+                title: "File Uploaded Successfully",
+                description: "Your financial document has been processed and transactions imported.",
+                variant: "success",
+            });
         },
+        onError: () => {
+            stopProgressAnimation();
+            currentProcessingState.value = null;
+            toast({
+                title: "Error Uploading File",
+                description: "There was an error processing your file. Please try again.",
+                variant: "destructive",
+            });
+        }
     });
 };
 </script>

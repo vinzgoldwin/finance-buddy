@@ -44,20 +44,26 @@ This is a Laravel + Vue.js (Inertia.js) finance management application.
 - **User**: Authentication and user management
 - **Transaction**: Financial transactions with categories, amounts, dates
 - **Category**: Transaction categorization system
-- **Relationships**: User hasMany Transactions, Transaction belongsTo Category
+- **SpendingLimit**: User-defined spending limits with intervals and currencies
+- **Relationships**: 
+  - User hasMany Transactions
+  - User hasMany SpendingLimits
+  - Transaction belongsTo Category
 
 ### Key Features
-- **PDF Upload & Parsing**: Upload financial documents, extract transaction data using AI
+- **Document Upload & Parsing**: Upload financial documents (PDF, CSV), extract transaction data using AI
 - **Transaction Management**: View, categorize, and manage financial transactions  
 - **Dashboard**: Overview with charts and financial summaries
+- **Spending Limits**: Set and track spending limits with daily/weekly/monthly intervals
 - **AI Advisor**: Financial insights and recommendations
-- **Multi-currency Support**: Handle different currencies with conversion
+- **Multi-currency Support**: Handle different currencies with conversion and user preferences
 - **Real-time Processing**: Background queue processing for heavy operations
 
 ### File Structure
 - `app/` - Laravel application logic (Controllers, Models, Services)
 - `resources/js/` - Vue.js frontend application
   - `components/ui/` - shadcn/vue UI component library
+  - `components/` - Custom Vue components (e.g., SpendingLimitCard)
   - `pages/` - Inertia.js page components
   - `layouts/` - Application layout components
   - `composables/` - Vue composition functions
@@ -68,6 +74,14 @@ This is a Laravel + Vue.js (Inertia.js) finance management application.
 - `OpenAiTransactionParserService`: AI-powered transaction parsing from documents
 - `PdfToTextService`: Convert PDF files to text for processing
 - `ParseFinancialDocumentAction`: Main action for processing uploaded financial documents
+- `TransactionAnalyticsService`: Handles analytics and categorization of transactions
+
+### Recent Enhancements
+- **Spending Limits**: Users can set spending limits with daily/weekly/monthly intervals and preferred currencies
+- **User Currency Preferences**: Users can set a preferred currency that persists across sessions
+- **Improved Dashboard Visualizations**: Enhanced bar charts and doughnut charts with better tooltips and formatting
+- **Document Parsing UI**: Improved upload interface with continuous progress indicators
+- **Navigation Updates**: Updated terminology to better reflect document upload and parsing functionality
 
 ### Development Notes
 - Uses Inertia.js for seamless Laravel-Vue integration

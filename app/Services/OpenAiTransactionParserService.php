@@ -87,15 +87,6 @@ class OpenAiTransactionParserService
     {
         $prompt = str_replace('{{PDF_CONTENT}}', $pdfText, self::PROMPT_TEMPLATE);
 
-        $freeModels = [
-            'qwen/qwen3-235b-a22b-2507:free',
-            'qwen/qwen3-235b-a22b:free',
-            'moonshotai/kimi-k2:free',
-            'z-ai/glm-4.5-air:free',
-            'deepseek/deepseek-r1-0528-qwen3-8b:free',
-            'deepseek/deepseek-r1-0528:free'
-        ];
-
         $response = OpenAI::chat()->create([
             'model'       => 'qwen/qwen3-235b-a22b-2507',
             'temperature' => 0,

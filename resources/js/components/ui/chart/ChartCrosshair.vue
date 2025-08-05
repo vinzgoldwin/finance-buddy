@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<{
   customTooltip?: Component
 }>(), {
   colors: () => [],
+  items: () => [],
 })
 
 // Use weakmap to store reference to each datapoint for Tooltip
@@ -23,7 +24,14 @@ function template(d: any) {
   else {
     const componentDiv = document.createElement('div')
     const omittedData = Object.entries(omit(d, [props.index])).map(([key, value]) => {
-      const legendReference = props.items.find(i => i.name === key)
+      // Ensure props.items is an array before using array methods
+      const itemsArray = Array.isArray(props.items) ? props.items : []
+      
+      // Find legend reference or create a default one
+      const legendReference = itemsArray.find(i => i.name === key) || { 
+        name: key, 
+        color: props.colors[Object.keys(omit(d, [props.index])).indexOf(key)] || '#94a3b8' 
+      }
       return { ...legendReference, value }
     })
     const TooltipComponent = props.customTooltip ?? ChartTooltip

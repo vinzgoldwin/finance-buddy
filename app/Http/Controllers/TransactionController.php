@@ -46,6 +46,7 @@ class TransactionController extends Controller
             'categories'   => $categories,
             'date'         => $monthStr,
             'monthOptions' => $monthOptions,
+            'preferredCurrency' => auth()->user()->preferred_currency ?? 'IDR',
         ]);
     }
 

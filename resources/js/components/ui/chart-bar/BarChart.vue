@@ -50,16 +50,14 @@ const legendItems = ref<BulletLegendItemInterface[]>(() => {
     color: colors.value[i],
     inactive: false,
   }))
-  
-  // Reorder for legend display: Income, Savings, Expenses
+
   const order = ['income', 'savings', 'expenses']
   items.sort((a, b) => {
     const indexA = order.indexOf(a.name)
     const indexB = order.indexOf(b.name)
-    // If item is not in our order array, put it at the end
     return (indexA === -1 ? Infinity : indexA) - (indexB === -1 ? Infinity : indexB)
   })
-  
+
   return items
 })
 
@@ -104,6 +102,8 @@ const selectorsBar = computed(() => props.type === 'grouped' ? GroupedBar.select
         v-if="showXAxis"
         type="x"
         :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
+        :num-ticks="data.length"
+        :tick-text-hide-overlapping="false"
         :grid-line="false"
         :tick-line="false"
         tick-text-color="var(--vis-text-color)"

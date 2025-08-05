@@ -15,8 +15,14 @@ class DashboardController extends Controller
     {
         $incomeCategoryId  = (int) config('finance.income_category_id', 1);
         $savingsCategoryId = (int) config('finance.savings_category_id', 7);
+        $positiveCategories = [$incomeCategoryId, $savingsCategoryId];
 
-        $currency  = strtoupper($request->query('currency', 'IDR'));
+        $currency  = strtoupper($request->query('currency', auth()->user()->preferred_currency ?? 'IDR'));
+
+        // Update user's preferred currency if it's different
+        if ($currency !== auth()->user()->preferred_currency && in_array($currency, ['USD', 'IDR'])) {
+            auth()->user()->update(['preferred_currency' => $currency]);
+        }
 
         if (! in_array($currency, ['USD', 'IDR'])) {
             $currency = 'IDR';
@@ -168,7 +174,7 @@ class DashboardController extends Controller
                 'date'        => Carbon::parse($t->date)->format('M d'),
                 'description' => $t->description,
                 'category'    => $t->category?->name ?? '—',
-                'amount'      => $t->category_id == $incomeCategoryId ?  (float)  $t->amount : -(float) $t->amount,
+                'amount'      => in_array((int) $t->category_id, $positiveCategories, true) ?  (float)  $t->amount : -(float) $t->amount,
                 'currency'    => $t->currency
             ]);
 
@@ -179,15 +185,17 @@ class DashboardController extends Controller
         $spendingLimitData = $spendingLimit ? [
             'amount' => $spendingLimit->amount,
             'interval' => $spendingLimit->interval,
+            'currency' => $spendingLimit->currency,
         ] : [
             'amount' => 0,
             'interval' => 'monthly',
+            'currency' => auth()->user()->preferred_currency ?? 'IDR',
         ];
 
-        // Calculate spent amount based on interval
+        // Calculate spent amount based on interval and currency
         $now = now();
         $spentAmount = 0;
-        
+
         switch ($spendingLimitData['interval']) {
             case 'daily':
                 $startDate = $now->copy()->startOfDay();
@@ -203,10 +211,25 @@ class DashboardController extends Controller
                 $endDate = $now->copy()->endOfMonth();
                 break;
         }
-        
-        // Get expenses (excluding income and savings categories)
+
+        // Format date range for display
+        $dateRange = '';
+        switch ($spendingLimitData['interval']) {
+            case 'daily':
+                $dateRange = $startDate->format('j M');
+                break;
+            case 'weekly':
+                $dateRange = $startDate->format('j M') . ' - ' . $endDate->format('j M');
+                break;
+            case 'monthly':
+                $dateRange = $startDate->format('F');
+                break;
+        }
+
+        // Get expenses (excluding income and savings categories) in the same currency as spending limit
         $spentAmount = Transaction::whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('category_id', [$incomeCategoryId, $savingsCategoryId])
+            ->where('currency', $spendingLimitData['currency'])
             ->sum('amount');
 
         // ------------------------------------------------------------------
@@ -226,7 +249,12 @@ class DashboardController extends Controller
             'categories'  => $categories,
             'recent'      => $recent,
             'barData'     => $barData,
-            'spendingLimit' => array_merge($spendingLimitData, ['spent' => (float) $spentAmount]),
+            'spendingLimit' => array_merge($spendingLimitData, [
+                'spent' => (float) $spentAmount,
+                'dateRange' => $dateRange,
+                'startDate' => $startDate->format('Y-m-d'),
+                'endDate' => $endDate->format('Y-m-d'),
+            ]),
         ]);
     }
 }

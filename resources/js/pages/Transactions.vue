@@ -54,6 +54,7 @@ const props = defineProps<{
     categories: Category[];
     date?: string;
     monthOptions: Array<{ value: string; label: string }>;
+    preferredCurrency: 'USD' | 'IDR';
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Transactions', href: '/transactions' }];
@@ -74,7 +75,7 @@ const createForm = useForm({
     date: new Date().toISOString().split('T')[0],
     description: '',
     amount: 0,
-    currency: 'USD' as 'USD' | 'IDR',
+    currency: props.preferredCurrency,
     category_id: '',
 });
 
@@ -134,6 +135,10 @@ const getCategoryColor = (categoryName: string) => {
 const isIncome = (transaction: Transaction) => {
     return transaction.category.name === 'Income';
 };
+
+const isSavings = (transaction: Transaction) => {
+    return transaction.category.name === 'Savings & Investing';
+}
 
 // Actions
 const openCreateModal = () => {
@@ -280,8 +285,8 @@ watch([currentMonth], applyFilters);
                                     </Badge>
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <span class="text-sm font-medium" :class="isIncome(transaction) ? 'text-green-600' : 'text-red-600'">
-                                        {{ isIncome(transaction) ? '+' : '-' }}{{ formatMoney(transaction.amount, transaction.currency) }}
+                                    <span class="text-sm font-medium" :class="isIncome(transaction) || isSavings(transaction) ? 'text-green-600' : 'text-red-600'">
+                                        {{ isIncome(transaction) || isSavings(transaction) ? '+' : '-' }}{{ formatMoney(transaction.amount, transaction.currency) }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">

@@ -13,6 +13,7 @@ class SpendingLimitController extends Controller
         $request->validate([
             'amount' => 'required|numeric|min:0',
             'interval' => 'required|in:daily,weekly,monthly',
+            'currency' => 'required|in:USD,IDR',
         ]);
 
         $spendingLimit = Auth::user()->spendingLimits()->updateOrCreate(
@@ -20,19 +21,21 @@ class SpendingLimitController extends Controller
             [
                 'amount' => $request->amount,
                 'interval' => $request->interval,
+                'currency' => $request->currency,
             ]
         );
 
-        return response()->json($spendingLimit);
+        return back()->with('status', 'Spending limit updated.');
     }
 
     public function show()
     {
         $spendingLimit = Auth::user()->spendingLimits()->first();
-        
+
         return response()->json($spendingLimit ?? [
             'amount' => 0,
             'interval' => 'monthly',
+            'currency' => Auth::user()->preferred_currency ?? 'IDR',
         ]);
     }
 }

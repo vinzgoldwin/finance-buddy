@@ -44,7 +44,7 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
     },
     {
-        title: 'Upload Finance Files',
+        title: 'Upload Documents',
         href: '/files/upload',
         icon: UploadCloud,
     },

@@ -45,6 +45,8 @@ const props = defineProps<{
         amount: number;
         interval: string;
         spent: number;
+        currency: 'USD' | 'IDR';
+        dateRange: string;
     };
 }>();
 
@@ -99,7 +101,7 @@ const currencyTab = ref<'USD' | 'IDR'>(props.currency);
 /* ───────────── spending limit state ───────────── */
 const spendingLimit = ref(props.spendingLimit);
 
-const updateSpendingLimit = (newLimit: { amount: number; interval: string; spent: number }) => {
+const updateSpendingLimit = (newLimit: { amount: number; interval: string; spent: number; currency: 'USD' | 'IDR' }) => {
     spendingLimit.value = newLimit;
 };
 
@@ -171,11 +173,12 @@ watch(currencyTab, (val) => {
                 />
             </div>
 
+
             <!-- donut -->
-            <Card class="sm:col-span-2 md:col-span-1 md:row-span-2">
-                <CardHeader><CardTitle>Spending Categories</CardTitle></CardHeader>
-                <CardContent class="flex flex-col items-center">
-                    <div class="h-48 w-full sm:h-64">
+            <Card class="sm:col-span-2 md:col-span-1 md:row-span-1">
+                <CardHeader class="pb-2"><CardTitle>Spending Categories</CardTitle></CardHeader>
+                <CardContent class="flex flex-col items-center pt-2">
+                    <div class="h-24 w-full">
                         <Doughnut
                             :data="donutData"
                             :options="{
@@ -187,7 +190,7 @@ watch(currencyTab, (val) => {
                     </div>
 
                     <!-- custom legend -->
-                    <ul class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+                    <ul class="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs">
                         <li v-for="item in donutLegend" :key="item.label" class="flex items-center gap-1">
                             <span class="inline-block h-2 w-2 rounded-full" :style="{ backgroundColor: item.color }" />
                             {{ item.label }}
@@ -197,7 +200,7 @@ watch(currencyTab, (val) => {
             </Card>
 
             <!-- Bar Chart -->
-            <Card class="sm:col-span-2 xl:col-span-3">
+            <Card class="sm:col-span-4">
                 <CardHeader><CardTitle>6‑Month Income, Savings & Expenses</CardTitle></CardHeader>
                 <CardContent class="h-48 sm:h-60">
                     <BarChart
@@ -207,7 +210,18 @@ watch(currencyTab, (val) => {
                         :categories="['income', 'savings', 'expenses']"
                         :colors="['#0ea5e9','#10b981','#ef4444']"
                         :y-formatter="(tick) => (typeof tick === 'number' ? moneyShort(tick, currencyTab) : '')"
+                        :x-formatter="(tick) => barData[tick]?.name || ''"
+                        :show-tooltip="true"
                     />
+                </CardContent>
+            </Card>
+
+            <!-- coach stub -->
+            <Card class="sm:col-span-2 md:row-span-2">
+                <CardHeader><CardTitle>AI Finance Coach</CardTitle></CardHeader>
+                <CardContent class="space-y-4">
+                    <p class="rounded-lg bg-muted p-4">Consider reducing your spending on shopping to increase your savings.</p>
+                    <input class="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none" placeholder="Type a message…" />
                 </CardContent>
             </Card>
 
@@ -242,15 +256,6 @@ watch(currencyTab, (val) => {
                             </tr>
                         </tbody>
                     </table>
-                </CardContent>
-            </Card>
-
-            <!-- coach stub -->
-            <Card class="sm:col-span-2 md:col-span-1 md:row-span-2">
-                <CardHeader><CardTitle>AI Finance Coach</CardTitle></CardHeader>
-                <CardContent class="space-y-4">
-                    <p class="rounded-lg bg-muted p-4">Consider reducing your spending on shopping to increase your savings.</p>
-                    <input class="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none" placeholder="Type a message…" />
                 </CardContent>
             </Card>
         </section>

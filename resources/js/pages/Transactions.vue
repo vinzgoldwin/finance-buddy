@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/toast/use-toast';
 // Remove pagination import for now
 
 // Icons
@@ -48,6 +49,8 @@ interface PaginatedTransactions {
         active: boolean;
     }>;
 }
+
+const { toast } = useToast();
 
 const props = defineProps<{
     transactions: PaginatedTransactions;
@@ -162,7 +165,19 @@ const createTransaction = () => {
         onSuccess: () => {
             showCreateModal.value = false;
             createForm.reset();
+            toast({
+                title: "Transaction Created",
+                description: "Your transaction has been successfully added.",
+                type: "success",
+            });
         },
+        onError: () => {
+            toast({
+                title: "Error",
+                description: "Failed to create transaction. Please check the form and try again.",
+                type: "destructive",
+            });
+        }
     });
 };
 
@@ -174,7 +189,19 @@ const updateTransaction = () => {
             showEditModal.value = false;
             editingTransaction.value = null;
             editForm.reset();
+            toast({
+                title: "Transaction Updated",
+                description: "Your transaction has been successfully updated.",
+                type: "success",
+            });
         },
+        onError: () => {
+            toast({
+                title: "Error",
+                description: "Failed to update transaction. Please check the form and try again.",
+                type: "destructive",
+            });
+        }
     });
 };
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\SpendingLimitController;
+use App\Http\Controllers\AiAdvisorController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\FileController;
@@ -17,7 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
     Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
     
-    Route::get('advisor', function () {return Inertia::render('AIAdvisor');})->name('advisor');
+    Route::get('advisor', [AiAdvisorController::class, 'index'])->name('advisor');
+    Route::post('advisor/analyze', [AiAdvisorController::class, 'analyze'])->name('advisor.analyze');
 
     Route::get('files/upload', [FileController::class, 'create'])->name('files.create');
     Route::post('files/upload', [FileController::class, 'store'])->name('files.store');

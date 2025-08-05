@@ -7,10 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 import { FileUp, Loader2 } from 'lucide-vue-next';
 
 import type { BreadcrumbItem } from '@/types';
+
+const { toast } = useToast();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Upload File', href: '/files/upload' }];
 
@@ -113,7 +116,20 @@ const submit = () => {
         onSuccess: () => {
             stopProgressAnimation();
             currentProcessingState.value = 'completed';
+            toast({
+                title: "File Uploaded",
+                description: "Your financial document has been successfully processed.",
+                type: "success",
+            });
         },
+        onError: () => {
+            stopProgressAnimation();
+            toast({
+                title: "Upload Failed",
+                description: "Failed to process your document. Please try again.",
+                type: "destructive",
+            });
+        }
     });
 };
 </script>

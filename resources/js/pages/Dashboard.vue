@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ArcElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title } from 'chart.js';
 import { computed, ref, watch } from 'vue';
-import { Doughnut } from 'vue-chartjs';
+import { toast } from '@/components/ui/toast/use-toast';
 
 /*  shadcn-vue controls  */
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -103,6 +103,10 @@ const spendingLimit = ref(props.spendingLimit);
 
 const updateSpendingLimit = (newLimit: { amount: number; interval: string; spent: number; currency: 'USD' | 'IDR' }) => {
     spendingLimit.value = newLimit;
+    toast({
+        title: "Spending Limit Updated",
+        description: "Your spending limit has been successfully updated.",
+    });
 };
 
 /*  react to changes  */

@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ArcElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title } from 'chart.js';
 import { computed, ref, watch } from 'vue';
+import { Doughnut } from 'vue-chartjs';
 import { toast } from '@/components/ui/toast/use-toast';
 
 /*  shadcn-vue controls  */

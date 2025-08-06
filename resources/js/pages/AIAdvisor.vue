@@ -1,37 +1,33 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Brain, TrendingUp, Wallet, Heart } from 'lucide-vue-next';
+import { AlertCircle, Brain, TrendingUp, Wallet, Heart, ClipboardList } from 'lucide-vue-next';
 import { router } from '@inertiajs/vue3';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'AI Advisor', href: '/advisor' }];
 
 // Form state
-const period = ref('month');
+const period = ref('week');
 const language = ref('en');
 
 // Analysis state
-const insights = ref<{
-  spending_insights: string;
-  savings_recommendations: string;
-  budgeting_assistance: string;
-  financial_health: string;
-} | null>(null);
+const page = usePage<{ props: { initialInsights: null | { spending_insights: string; savings_recommendations: string; budgeting_assistance: string; financial_health: string } } }>();
+const insights = ref(page.props.initialInsights);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
 // Period options
 const periodOptions = [
+    { value: 'day', label: 'Last Day' },
     { value: 'week', label: 'Last Week' },
     { value: 'month', label: 'Last Month' },
-    { value: 'quarter', label: 'Last Quarter' },
-    { value: 'year', label: 'Last Year' },
 ];
 
 // Language options
@@ -41,31 +37,38 @@ const languageOptions = [
 ];
 
 // Computed properties
-const hasInsights = computed(() => insights.value !== null && 
-  (insights.value.spending_insights.trim() !== '' || 
-   insights.value.savings_recommendations.trim() !== '' || 
-   insights.value.budgeting_assistance.trim() !== '' || 
+const hasInsights = computed(() => insights.value !== null &&
+  (insights.value.spending_insights.trim() !== '' ||
+   insights.value.savings_recommendations.trim() !== '' ||
+   insights.value.budgeting_assistance.trim() !== '' ||
    insights.value.financial_health.trim() !== ''));
+
+// Simple markdown bold (**text**) to <strong>text</strong>
+const renderBold = (text: string) => {
+  if (!text) return '';
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+};
 
 // Methods
 const requestAnalysis = () => {
     loading.value = true;
     error.value = null;
-    
+
     router.post(route('advisor.analyze'), {
         period: period.value,
         language: language.value,
     }, {
+        preserveScroll: true,
         onSuccess: () => {
             loading.value = false;
-            // For now, we'll simulate getting insights
-            // In a real implementation, you would get this from the actual API response
-            insights.value = {
-                spending_insights: "I noticed you've been spending a bit more on dining out lately. Consider cooking at home more often to save some money.",
-                savings_recommendations: "Your savings rate is looking good! Try to set aside a fixed amount each month for your emergency fund.",
-                budgeting_assistance: "You're doing well with your budget. Consider allocating 10% of your income to savings if you're not already doing so.",
-                financial_health: "Overall, your financial health looks solid. Keep up the good work on tracking your expenses!"
-            };
+            router.get(route('advisor.index'), {}, {
+                replace: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    const p: any = usePage();
+                    insights.value = p.props.initialInsights ?? null;
+                }
+            });
         },
         onError: (errors: any) => {
             loading.value = false;
@@ -78,7 +81,7 @@ const requestAnalysis = () => {
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head title="AI Advisor" />
-        
+
         <div class="container mx-auto py-8">
             <div class="mb-8 text-center">
                 <h1 class="text-3xl font-bold tracking-tight">AI Financial Advisor</h1>
@@ -87,7 +90,7 @@ const requestAnalysis = () => {
                 </p>
             </div>
 
-            <Card class="mb-8">
+            <Card class="mx-auto mb-8 max-w-lg shadow-lg">
                 <CardHeader>
                     <CardTitle>Analysis Settings</CardTitle>
                     <CardDescription>
@@ -96,47 +99,49 @@ const requestAnalysis = () => {
                 </CardHeader>
                 <CardContent>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium">Time Period</label>
-                            <Select v-model="period">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select period" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem 
-                                        v-for="option in periodOptions" 
-                                        :key="option.value" 
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Time Period</label>
+                                <Select v-model="period">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select period" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="option in periodOptions"
+                                            :key="option.value"
+                                            :value="option.value"
+                                        >
+                                            {{ option.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Language</label>
+                                <Select v-model="language">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select language" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="option in languageOptions"
+                                            :key="option.value"
+                                            :value="option.value"
+                                        >
+                                            {{ option.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium">Language</label>
-                            <Select v-model="language">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select language" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem 
-                                        v-for="option in languageOptions" 
-                                        :key="option.value" 
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        <div class="flex items-end">
-                            <Button 
-                                @click="requestAnalysis" 
+
+                        <div class="flex items-end justify-end">
+                            <Button
+                                @click="requestAnalysis"
                                 :disabled="loading"
-                                class="w-full"
+                                class="w-full md:w-auto"
                             >
                                 <Brain class="mr-2 h-4 w-4" />
                                 {{ loading ? 'Analyzing...' : 'Get Insights' }}
@@ -188,7 +193,7 @@ const requestAnalysis = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle class="flex items-center">
-                            <Brain class="mr-2 h-5 w-5" />
+                            <ClipboardList class="mr-2 h-5 w-5" />
                             Budgeting Assistance
                         </CardTitle>
                     </CardHeader>
@@ -215,7 +220,7 @@ const requestAnalysis = () => {
             </div>
 
             <!-- Insights Results -->
-            <div v-else-if="hasInsights && insights" class="space-y-6">
+            <div v-else-if="hasInsights && insights" class="space-y-6 mx-auto max-w-3xl">
                 <Card>
                     <CardHeader>
                         <CardTitle class="flex items-center">
@@ -224,7 +229,7 @@ const requestAnalysis = () => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p class="whitespace-pre-line">{{ insights.spending_insights }}</p>
+                        <p class="whitespace-pre-line" v-html="renderBold(insights.spending_insights)"></p>
                     </CardContent>
                 </Card>
 
@@ -236,19 +241,19 @@ const requestAnalysis = () => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p class="whitespace-pre-line">{{ insights.savings_recommendations }}</p>
+                        <p class="whitespace-pre-line" v-html="renderBold(insights.savings_recommendations)"></p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
                         <CardTitle class="flex items-center">
-                            <Brain class="mr-2 h-5 w-5" />
+                            <ClipboardList class="mr-2 h-5 w-5" />
                             Budgeting Assistance
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p class="whitespace-pre-line">{{ insights.budgeting_assistance }}</p>
+                        <p class="whitespace-pre-line" v-html="renderBold(insights.budgeting_assistance)"></p>
                     </CardContent>
                 </Card>
 
@@ -260,7 +265,7 @@ const requestAnalysis = () => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p class="whitespace-pre-line">{{ insights.financial_health }}</p>
+                        <p class="whitespace-pre-line" v-html="renderBold(insights.financial_health)"></p>
                     </CardContent>
                 </Card>
             </div>

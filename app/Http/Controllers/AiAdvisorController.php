@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FinancialInsight;
 use App\Models\Transaction;
 use App\Services\TransactionAnalysisService;
 use Illuminate\Http\Request;
@@ -24,25 +25,50 @@ class AiAdvisorController extends Controller
      */
     public function index()
     {
-        return Inertia::render('AIAdvisor');
+        $userId = auth()->id();
+
+        $latest = FinancialInsight::with([
+            'spendingInsights' => function ($q) { $q->latest(); },
+            'savingsRecommendations' => function ($q) { $q->latest(); },
+            'budgetingAssistances' => function ($q) { $q->latest(); },
+            'financialHealths' => function ($q) { $q->latest(); },
+            'periodSummary.topCategories' => function ($q) { $q->orderBy('rank'); },
+        ])
+            ->where('user_id', $userId)
+            ->orderByDesc('period_end')
+            ->orderByDesc('version')
+            ->first();
+
+        $insights = null;
+        if ($latest) {
+            $insights = [
+                'spending_insights' => optional($latest->spendingInsights->first())->content ?? '',
+                'savings_recommendations' => optional($latest->savingsRecommendations->first())->content ?? '',
+                'budgeting_assistance' => optional($latest->budgetingAssistances->first())->content ?? '',
+                'financial_health' => optional($latest->financialHealths->first())->content ?? '',
+            ];
+        }
+
+        return Inertia::render('AIAdvisor', [
+            'initialInsights' => $insights,
+        ]);
     }
 
-    /**
-     * Analyze transactions and provide insights
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function analyze(Request $request)
     {
+        set_time_limit(150);
+
         $request->validate([
-            'period' => 'required|in:week,month,quarter,year',
+            'period' => 'required|in:day,week,month',
             'language' => 'required|in:en,id',
         ]);
 
-        // Determine date range based on period
         $endDate = Carbon::now();
         switch ($request->period) {
+            case 'day':
+                $startDate = $endDate->copy()->subDay();
+                $timePeriod = 'last day';
+                break;
             case 'week':
                 $startDate = $endDate->copy()->subWeek();
                 $timePeriod = 'last week';
@@ -51,20 +77,11 @@ class AiAdvisorController extends Controller
                 $startDate = $endDate->copy()->subMonth();
                 $timePeriod = 'last month';
                 break;
-            case 'quarter':
-                $startDate = $endDate->copy()->subQuarter();
-                $timePeriod = 'last quarter';
-                break;
-            case 'year':
-                $startDate = $endDate->copy()->subYear();
-                $timePeriod = 'last year';
-                break;
             default:
                 $startDate = $endDate->copy()->subMonth();
                 $timePeriod = 'last month';
         }
 
-        // Get transactions for the user within the date range
         $transactions = Transaction::where('user_id', auth()->id())
             ->whereBetween('date', [$startDate, $endDate])
             ->with('category')
@@ -80,22 +97,16 @@ class AiAdvisorController extends Controller
             })
             ->toArray();
 
-        // For demonstration purposes, we'll return sample data
-        // In a real implementation, you would call the AI service:
-        // $insights = $this->analysisService->analyzeTransactions(
-        //     $transactions,
-        //     $timePeriod,
-        //     $request->language
-        // );
 
-        // Sample insights for demonstration
-        $insights = [
-            'spending_insights' => "I noticed you've been spending a bit more on dining out lately. Consider cooking at home more often to save some money.",
-            'savings_recommendations' => "Your savings rate is looking good! Try to set aside a fixed amount each month for your emergency fund.",
-            'budgeting_assistance' => "You're doing well with your budget. Consider allocating 10% of your income to savings if you're not already doing so.",
-            'financial_health' => "Overall, your financial health looks solid. Keep up the good work on tracking your expenses!"
-        ];
+        $this->analysisService->analyzeTransactions(
+            $transactions,
+            $timePeriod,
+            $request->language,
+            $request->user()->id,
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        );
 
-        return response()->json($insights);
+        return back()->with('status', 'Transactions has been successfully analyzed.');
     }
 }

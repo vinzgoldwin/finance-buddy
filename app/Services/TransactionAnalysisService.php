@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\FinancialInsight;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Arr;
@@ -9,15 +10,6 @@ use OpenAI\Laravel\Facades\OpenAI;
 
 class TransactionAnalysisService
 {
-    protected string $apiUrl;
-    protected string $apiKey;
-
-    public function __construct()
-    {
-        $this->apiUrl = config('openai.api_base') ?? 'https://api.openai.com/v1/chat/completions';
-        $this->apiKey = config('openai.api_key');
-    }
-
     /**
      * Analyze transactions and generate insights using AI
      *
@@ -26,7 +18,7 @@ class TransactionAnalysisService
      * @param string $language
      * @return array
      */
-    public function analyzeTransactions(array $transactions, string $timePeriod, string $language = 'en'): array
+    public function analyzeTransactions(array $transactions, string $timePeriod, string $language = 'en', ?int $userId = null, ?string $periodStart = null, ?string $periodEnd = null): array
     {
         // Prepare the prompt with transaction data
         $prompt = $this->preparePrompt($transactions, $timePeriod, $language);
@@ -34,8 +26,10 @@ class TransactionAnalysisService
         // Call the AI API
         $response = $this->callAiApi($prompt);
 
-        // Parse and return the insights
-        return $this->parseInsights($response);
+        // Parse
+        $parsed = $this->parseAndPersistInsights($response, $userId, $periodStart, $periodEnd);
+
+        return $parsed;
     }
 
     /**
@@ -123,21 +117,21 @@ class TransactionAnalysisService
             Format your response using the following structure:
 
             <insights>
-            <spending_insights>
-            (Include your analysis and recommendations here)
-            </spending_insights>
+                <spending_insights>
+                (Include your analysis and recommendations here)
+                </spending_insights>
 
-            <savings_recommendations>
-            (Include your analysis and recommendations here)
-            </savings_recommendations>
+                <savings_recommendations>
+                (Include your analysis and recommendations here)
+                </savings_recommendations>
 
-            <budgeting_assistance>
-            (Include your analysis and recommendations here)
-            </budgeting_assistance>
+                <budgeting_assistance>
+                (Include your analysis and recommendations here)
+                </budgeting_assistance>
 
-            <financial_health>
-            (Include your analysis and recommendations here)
-            </financial_health>
+                <financial_health>
+                (Include your analysis and recommendations here)
+                </financial_health>
             </insights>
 
              <period_summary>
@@ -159,64 +153,150 @@ class TransactionAnalysisService
     protected function callAiApi(string $prompt): array
     {
         $response = OpenAI::chat()->create([
-            'model'       => 'qwen/qwen3-235b-a22b-2507',
-            'temperature' => 0.7,
-            'max_tokens'  => 12000,
+            'model'       => 'openai/gpt-oss-120b',
+            'temperature' => 0.1,
+            'max_tokens'  => 2500,
             'messages'    => [
                 [
                     'role'    => 'system',
-                    'content' => 'You are a strict financial statement parser. Return only what the user asks.',
+                    'content' => 'You are a personal finance assistant tasked with providing insights based on a user\'s financial transactions',
                 ],
                 [
                     'role'    => 'user',
                     'content' => $prompt,
                 ],
             ],
+            'reasoning' => [
+                'exclude' => true,
+            ],
         ]);
 
-        $content = $response->choices[0]->message->content ?? '';
+        return $response->toArray();
+    }
 
+/**
+     * Parse the AI response and persist insights into DB
+     *
+     * @param array $response
+     * @param int|null $userId
+     * @param string|null $periodStart
+     * @param string|null $periodEnd
+     * @return array
+     */
+    protected function parseAndPersistInsights(array $response, ?int $userId, ?string $periodStart, ?string $periodEnd): array
+    {
+        $content = Arr::get($response, 'choices.0.message.content', '');
 
+        $extract = function (string $tag) use ($content): ?string {
+            if (preg_match('/<' . $tag . '>(.*?)<\/' . $tag . '>/s', $content, $m)) {
+                return trim($m[1]);
+            }
+            return null;
+        };
 
-        return $response->json();
+        $spending = $extract('spending_insights');
+        $savings = $extract('savings_recommendations');
+        $budgeting = $extract('budgeting_assistance');
+        $health = $extract('financial_health');
+
+        $periodSummaryJson = $extract('period_summary');
+        $periodData = [];
+        if ($periodSummaryJson) {
+            $periodSummaryJson = trim($periodSummaryJson);
+            // In case there is extra markup/noise, attempt to find the JSON object
+            if (preg_match('/\{[\s\S]*\}/', $periodSummaryJson, $mJson)) {
+                $periodSummaryJson = $mJson[0];
+            }
+            $periodData = json_decode($periodSummaryJson, true) ?: [];
+        }
+
+        $userId = $userId ?? auth()->id();
+        $periodStart = $periodStart ?? ($periodData['period_start'] ?? null);
+        $periodEnd = $periodEnd ?? ($periodData['period_end'] ?? null);
+
+        // persist
+        return $this->persistInsights([
+            'user_id' => $userId,
+            'period_start' => $periodStart,
+            'period_end' => $periodEnd,
+        ], [
+            'spending_insights' => $spending,
+            'savings_recommendations' => $savings,
+            'budgeting_assistance' => $budgeting,
+            'financial_health' => $health,
+            'period_summary' => $periodData,
+        ]);
     }
 
     /**
-     * Parse the AI response and extract insights
-     *
-     * @param array $response
-     * @return array
+     * Persist insights and return structured payload
      */
-    protected function parseInsights(array $response): array
+    protected function persistInsights(array $meta, array $data): array
     {
-        // Extract the content from the AI response
-        $content = Arr::get($response, 'choices.0.message.content', '');
+        \DB::beginTransaction();
+        try {
+            $version = FinancialInsight::where('user_id', $meta['user_id'])
+                ->where('period_start', $meta['period_start'])
+                ->where('period_end', $meta['period_end'])
+                ->max('version');
+            $version = $version ? ($version + 1) : 1;
 
-        // Parse the XML-like structure from the response
-        $insights = [
-            'spending_insights' => '',
-            'savings_recommendations' => '',
-            'budgeting_assistance' => '',
-            'financial_health' => '',
-        ];
+            $fi = FinancialInsight::create([
+                'user_id' => $meta['user_id'],
+                'period_start' => $meta['period_start'],
+                'period_end' => $meta['period_end'],
+                'version' => $version,
+            ]);
 
-        // Extract each section using regex
-        if (preg_match('/<spending_insights>(.*?)<\/spending_insights>/s', $content, $matches)) {
-            $insights['spending_insights'] = trim($matches[1]);
+            if (!empty($data['spending_insights'])) {
+                $fi->spendingInsights()->create(['content' => $data['spending_insights']]);
+            }
+            if (!empty($data['savings_recommendations'])) {
+                $fi->savingsRecommendations()->create(['content' => $data['savings_recommendations']]);
+            }
+            if (!empty($data['budgeting_assistance'])) {
+                $fi->budgetingAssistances()->create(['content' => $data['budgeting_assistance']]);
+            }
+            if (!empty($data['financial_health'])) {
+                $fi->financialHealths()->create(['content' => $data['financial_health']]);
+            }
+
+            if (!empty($data['period_summary'])) {
+                $psData = $data['period_summary'];
+                $ps = $fi->periodSummary()->create([
+                    'period_start' => $psData['period_start'] ?? $meta['period_start'],
+                    'period_end' => $psData['period_end'] ?? $meta['period_end'],
+                    'total_income' => $psData['total_income'] ?? 0,
+                    'total_expense' => $psData['total_expense'] ?? 0,
+                    'net_balance' => $psData['net_balance'] ?? 0,
+                    'savings_rate_pct' => $psData['savings_rate_pct'] ?? null,
+                    'largest_tx_date' => $psData['largest_single_transaction']['date'] ?? null,
+                    'largest_tx_description' => $psData['largest_single_transaction']['description'] ?? null,
+                    'largest_tx_amount' => $psData['largest_single_transaction']['amount'] ?? null,
+                ]);
+
+                if (!empty($psData['top_expense_categories']) && is_array($psData['top_expense_categories'])) {
+                    foreach ($psData['top_expense_categories'] as $idx => $row) {
+                        $ps->topCategories()->create([
+                            'category' => $row['category'] ?? 'Unknown',
+                            'amount' => $row['amount'] ?? 0,
+                            'rank' => $idx + 1,
+                        ]);
+                    }
+                }
+            }
+
+            \DB::commit();
+
+            return [
+                'id' => $fi->id,
+                'version' => $fi->version,
+                'period_start' => $fi->period_start->format('Y-m-d'),
+                'period_end' => $fi->period_end->format('Y-m-d'),
+            ];
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            throw $e;
         }
-
-        if (preg_match('/<savings_recommendations>(.*?)<\/savings_recommendations>/s', $content, $matches)) {
-            $insights['savings_recommendations'] = trim($matches[1]);
-        }
-
-        if (preg_match('/<budgeting_assistance>(.*?)<\/budgeting_assistance>/s', $content, $matches)) {
-            $insights['budgeting_assistance'] = trim($matches[1]);
-        }
-
-        if (preg_match('/<financial_health>(.*?)<\/financial_health>/s', $content, $matches)) {
-            $insights['financial_health'] = trim($matches[1]);
-        }
-
-        return $insights;
     }
 }

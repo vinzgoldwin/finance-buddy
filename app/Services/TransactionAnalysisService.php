@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Arr;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class TransactionAnalysisService
 {
@@ -157,17 +158,25 @@ class TransactionAnalysisService
      */
     protected function callAiApi(string $prompt): array
     {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-            'Content-Type' => 'application/json',
-        ])->post($this->apiUrl, [
-            'model' => config('openai.model', 'gpt-3.5-turbo'),
-            'messages' => [
-                ['role' => 'user', 'content' => $prompt]
-            ],
+        $response = OpenAI::chat()->create([
+            'model'       => 'qwen/qwen3-235b-a22b-2507',
             'temperature' => 0.7,
-            'max_tokens' => 2000,
+            'max_tokens'  => 12000,
+            'messages'    => [
+                [
+                    'role'    => 'system',
+                    'content' => 'You are a strict financial statement parser. Return only what the user asks.',
+                ],
+                [
+                    'role'    => 'user',
+                    'content' => $prompt,
+                ],
+            ],
         ]);
+
+        $content = $response->choices[0]->message->content ?? '';
+
+
 
         return $response->json();
     }

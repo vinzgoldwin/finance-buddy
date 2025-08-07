@@ -85,6 +85,8 @@ class AiAdvisorController extends Controller
         $transactions = Transaction::where('user_id', auth()->id())
             ->whereBetween('date', [$startDate, $endDate])
             ->with('category')
+            ->orderBy('amount', 'desc')
+            ->limit(30)
             ->get()
             ->map(function ($transaction) {
                 return [
@@ -96,7 +98,6 @@ class AiAdvisorController extends Controller
                 ];
             })
             ->toArray();
-
 
         $this->analysisService->analyzeTransactions(
             $transactions,

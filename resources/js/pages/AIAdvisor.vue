@@ -161,7 +161,7 @@ const requestAnalysis = () => {
             </div>
 
             <!-- Loading State -->
-            <div v-if="loading" class="space-y-6">
+            <div v-if="loading" class="space-y-6 mx-auto max-w-3xl">
                 <Card>
                     <CardHeader>
                         <CardTitle class="flex items-center">
